@@ -28,6 +28,7 @@ def read_mask(filename, dims, coords):
             continue
         m = xr.DataArray([row for row in mask_data[key]], dims = dims, coords = coords, name = key + "_mask")
         mask_xr[key + "_mask"] = m
+    return mask_xr
 
 
 

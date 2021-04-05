@@ -25,15 +25,16 @@ class cloud_classifier:
         self.lons = None
         self.lats = None
         self.mask = None
+        self.mask_indices
 
     def add_trainig_data(self, filename_data, filename_labels):
         return
 
 
 
-    def read_h5mask(filename, mask = Null):
+    def get_h5mask(self, filename, selected_mask = None):
         """
-        Reads mask-data from h5 file and sets mask for the classifier if given   
+        Reads mask-data from h5 file and sets mask for the classifier if given
         
         Parameters
         ----------
@@ -47,7 +48,14 @@ class cloud_classifier:
         if(not training_data):
             print("Trainig data must be added before setting mask!")
             return
+
+        # get dims and coords from training_data
         dims = ['rows', 'cols']
         coords = {'lat': training_data[0].coords['lat'], 'lon':training_data[0].coords['lon']}
-        io.read_mask(filename, dims, coords)
+        self.mask = io.read_mask(filename, dims, coords)
+        if (selected_mask):
+            self.mask_indices
+
+
         return
+
