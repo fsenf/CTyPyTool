@@ -4,7 +4,12 @@ import numpy as np
 
 
 
-def read_mask(filename, dims, coords):
+def read_training_set(filename_data, filename_labels):
+    sat_data = xr.open_dataset(filename_data)
+    label_data = xr.open_dataset(filename_labels)
+    return sat_data, label_data
+
+def read_h5mask(filename, dims, coords):
     """
     Reads mask-data from h5 file and converts it into xr.array       
     
@@ -29,22 +34,6 @@ def read_mask(filename, dims, coords):
         m = xr.DataArray([row for row in mask_data[key]], dims = dims, coords = coords, name = key + "_mask")
         mask_xr[key + "_mask"] = m
     return mask_xr
-
-
-
-def extract_learning_data(data, labels, indeces, hour = 0): 
-    input_data = []
-    output_data = []
-    for variable in data.variables:
-         if "bt" in variable:
-            masked_channel = np.array(data[variable])[hour,indeces[0],indeces[1]].flatten() 
-            input_data.append(masked_channel)
-    input_data = np.array(input_data)
-    sp = input_data.shape
-    input_data = input_data.flatten().reshape(sp[1],sp[0], order='F')
-    
-    output_data = np.array(labels["CT"])[hour,indeces[0], indeces[1]].flatten()
-    return input_data, output_data
 
 
 def clean_data(data, labels, indeces):
