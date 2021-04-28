@@ -128,6 +128,9 @@ def extract_trainig_vectors(data, indices, hour = 0):
     vectors = []
     for variable in data.variables:
          if "bt" in variable:
+            # remove layer bt039 because of unreliable data
+            if "bt039" in variable:
+                continue
             masked_channel = np.array(data[variable])[hour,indices[0],indices[1]].flatten() 
             vectors.append(masked_channel)
     vectors = np.array(vectors)

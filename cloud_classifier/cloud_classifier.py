@@ -4,8 +4,12 @@ import tools.plotting as pl
 
 import xarray as xr
 import numpy as np
+
 from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import SelectKBest, chi2
+
 from joblib import dump, load
 import time
 
@@ -20,7 +24,7 @@ importlib.reload(pl)
 
 class cloud_classifier:
     """
-    Trainable Classifier for cloud type prediction from satelite data.
+    Trainable Classifier for cloud cl_type prediction from satelite data.
 
 
 
@@ -50,6 +54,22 @@ class cloud_classifier:
         self.pred_filename = None
 
         self.cl = None
+        self.feat_select = None
+
+        ### paramaeters
+        self.cDV = False
+        self.kOV = False
+        self.n = 100
+        self.hours=range(24)
+        self.cl_type = "Tree"
+
+
+    def set_paremeters(self, n=100, hours=range(24), cDV=True, kOV=True, cl_type = "Tree"):
+        self.cDV = cDV
+        self.kOV = kOV
+        self.n = n
+        self.hours=hours
+        self.cl_type = cl_type
 
 
 
@@ -86,12 +106,11 @@ class cloud_classifier:
 
         """
         self.training_sets.append([filename_data, filename_labels])
-        #self.training_sets.append(io.read_training_set(filename_data, filename_labels))
         return
 
 
 
-    def create_training_vectors(self, n = 100, hours=range(24), cDV=True, kOV=True):
+    def create_training_vectors(self):
         """
         Creates sets of training vectors and labels from all added trainig sets
 
@@ -119,8 +138,8 @@ class cloud_classifier:
         self.training_vectors = None
         self.training_labels = np.array([])
         for t_set in self.training_sets:
-            v,l = tr.sample_training_set(t_set[0], t_set[1], n, hours, 
-                                        self.masked_indices, cDV, kOV)
+            v,l = tr.sample_training_set(t_set[0], t_set[1], self.n, self.hours, 
+                                        self.masked_indices, self.cDV, self.kOV)
             if (self.training_vectors is None):
                 self.training_vectors = v
             else:
@@ -128,7 +147,16 @@ class cloud_classifier:
             self.training_labels = np.append(self.training_labels, l, axis = 0)
 
 
-    def train_tree_classifier(self, max_depth = 20):
+    def fit_feature_selection(self, k = 20):
+        if(self.training_vectors is None or self.training_labels is None):
+            print("No training vectors ceated")
+            return
+        self.feat_select = SelectKBest(chi2, k=k).fit(self.training_vectors, self.training_labels)
+
+    def apply_feature_selection(self, vectors = None):
+        return
+
+    def train_tree_classifier(self, max_depth = None, ccp_alpha = None, training_vectors = None, training_labels = None):
         """
         Trains the classifier using previously created training_vectors
         
@@ -137,10 +165,16 @@ class cloud_classifier:
         m_depth : int
             Maximal depth of the decision tree
         """
+        if(self.cl_type == "Tree"):
+            self.cl = tree.DecisionTreeClassifier(max_depth = max_depth, ccp_alpha=ccp_alpha)
+        elif(self.cl_type == "Forest"): 
+            self.cl = RandomForestClassifier( n_estimators = 75, max_depth = max_depth, ccp_alpha=ccp_alpha)
 
-        self.cl = tree.DecisionTreeClassifier( max_depth = max_depth )
 
-        self.cl.fit(self.training_vectors, self.training_labels)
+        if (training_vectors is None or training_labels is None):
+            self.cl.fit(self.training_vectors, self.training_labels)
+        else:
+            self.cl.fit(training_vectors, training_labels)
 
 
 
@@ -168,22 +202,24 @@ class cloud_classifier:
         # store filename
         self.pred_filename = filename
         # create vectors for classifier
-        self.pred_vectors, self.pred_indices = tr.create_test_vectors(filename,
-                                            hour, self.masked_indices, cDV, kOV)
+        self.pred_vectors, self.pred_indices = tr.create_test_vectors(filename, 
+                            self.hour, self.masked_indices, self.cDV, self.kOV)
 
 
     def predict_labels(self):
         """
-        Predicts the labels if a corresponding set of vectors has been created.
+        Predicts the labels if a corresponding set of input vectors has been created.
         """
         if(self.cl is None):
             print("No classifer trained or loaded")
             return
         if(self.pred_vectors is None):
-            print("No test vectors created or added")
+            print("No input vectors created or added")
             return
 
         self.pred_labels =  self.cl.predict(self.pred_vectors)
+
+
 
     def plot_labels(self):
         """
@@ -198,20 +234,64 @@ class cloud_classifier:
 
 
 
-    def save_labels(self, filename):
-        """
-        Saves predicted labels
-        """
-        if (self.pred_labels is None or self.pred_filename is None
-                or self.pred_indices is None):
-            print("Unsufficant data for saving labels")
-            return  
-        data = tr.imbed_data(self.pred_labels, self.pred_indices, self.pred_filename)
-        tr.write_NETCDF(data, filename)
+    ##################################################################################
+    #################         Evaluation
+    ##################################################################################
         
-    def evaluate(self, filename_data, filename_labels, hour = 0, cDV=True, kOV=True):
+    # def create_evaluation_set(self, filename = None):
+    #     """
+    #     Creates a set of training and test vectors for evaluation
+        
+    #     Parameters
+    #     ----------
+    #     self : cloud_classifier
+    #         Object of cloud classifier cl_type
+    #     filename : string
+    #         (Optional) Filename for saving dataset
+
+    #     """
+
+    #     if(self.training_sets is None):
+    #         print("No training data added.")
+    #     return
+
+    #     self.create_training_vectors()
+    #     train_v, test_v, train_l, test_l = train_test_split(
+    #                         self.training_vectors,self.training_labels, random_state=0)
+
+    #     dump([train_v, train_l], filename)
+
+
+
+
+    def evaluate_parameters(self, max_depth = None, ccp_alpha = 0, verbose = False):
         """
-        Predicts the labels for a given satelite data set and evaluates them with.
+        Evaluates the given parameters over a set of training vectors
+
+        Training vectors are split into test and trainig set
+        """
+        if(self.training_vectors is None or self.training_labels is None):
+            print("No training vectors ceated")
+            return
+        train_v, test_v, train_l, test_l = train_test_split(
+                                self.training_vectors,self.training_labels, random_state=0)
+
+        self.train_tree_classifier(max_depth, ccp_alpha, train_v, train_l)
+
+        #print(self.cl.score(test_v, test_l))
+        pred_l = self.cl.predict(test_v)
+
+        correct = np.sum(pred_l == test_l)
+        total = len(pred_l)
+        if(verbose):
+            print("Correctly identified %i out of %i labels! \nPositve rate is: %f" % (correct, total, correct/total))
+        return(self.cl.score(test_v, test_l))
+        
+
+        
+    def evaluate_classifier(self, filename_data, filename_labels, hour = 0):
+        """
+        Evaluates an already trained classifier with a new set of data and labels
         
         Parameters
         ----------
@@ -222,45 +302,85 @@ class cloud_classifier:
             The data of the corresponding labels, if given  
 
         hour : int
-            0-23, hour of the day at which the data set is read
-
-        cDV: bool
-            (Optional) Calculate inter-value-difference-vectors for use as training vectors. Default True.
-
-        kOV : bool
-            (Optional) When using difference vectors, also keep original absolut values as 
-            first entries in vector. Default False.
+            0-23, hour of the day at which the data sets are read
         """
         if(self.cl is None):
             print("No classifer trained or loaded")
             return
-        self.create_test_vectors(filename_data, hour, cDV, kOV)
+        self.create_test_vectors(filename_data, hour, self.cDV, self.kOV)
         self.predict_labels()
         org_labels = tr.exctract_labels_fromFile(filename_labels, self.pred_indices, hour)
 
         correct = np.sum(self.pred_labels == org_labels)
         total = len(org_labels)
         print("Correctly identified %i out of %i labels! \nPositve rate is: %f" % (correct, total, correct/total))
+  
 
+    ##################################################################################
+    #################         Saving and Loading parts of the data
+    ##################################################################################
+
+    def export_labels(self, filename):
+        """
+        Saves predicted labels as netcdf file
+
+        Parameters
+        ----------
+        filename : string
+            Name of the file in which the labels will be written
+        """
+        if (self.pred_labels is None or self.pred_filename is None
+                or self.pred_indices is None):
+            print("Unsufficant data for saving labels")
+            return  
+        data = tr.imbed_data(self.pred_labels, self.pred_indices, self.pred_filename)
+        tr.write_NETCDF(data, filename)
+    
 
     def save_classifier(self, filename):
         """
-        Predicts the labels for a given satelite data set and evaluates them with.
-        
+        Saves Classifier
+
         Parameters
         ----------
         filename : string
-            Name if the file the classifier is saved under
+            Name of the file into which the classifier is saved.
         """
         dump(self.cl, filename)
 
+
     def load_classifier(self, filename):
         """
-        Predicts the labels for a given satelite data set and evaluates them with.
+        Loads classifer        
+        Parameters
+        ----------
+        filename : string
+            Name if the file the classifier is loaded from.
+        """
+        self.cl = load(filename)
+
+
+    def save_training_vector_set(self, filename):
+        """
+        Saves a set of already created training vectors
+
+        ----------
+        filename : string
+            Name of the file into which the vector set is saved.
+        """
+        dump([self.training_vectors, self.training_labels], filename)
+
+
+    def load_training_vector_set(self, filename):
+        """
+        Loads a set of already created training vectors
         
         Parameters
         ----------
         filename : string
-            Name if the file the classifier is loaded from
+            Name if the file the vector set is loaded from.
         """
-        self.cl = load(filename)
+        self.training_vectors, self.training_labels = load(filename)
+
+
+
