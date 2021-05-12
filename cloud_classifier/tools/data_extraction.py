@@ -24,7 +24,6 @@ def sample_training_sets(training_sets, n, hours, indices, input_channels):
     for t_set in training_sets:
         #read data
         sat_data = xr.open_dataset(t_set[0])
-        label_data = xr.open_dataset(t_set[1])
         # check if indices have benn selected
         if (indices is None):
             # if not: get all non-nan indices from the first layer specified in input channels
@@ -45,7 +44,7 @@ def sample_training_sets(training_sets, n, hours, indices, input_channels):
                 vectors = v
             else:
                 vectors = np.append(vectors, v, axis = 0)
-            labels = np.append(labels, extract_labels(label_data, selection, h), axis = 0)
+            labels = np.append(labels, extract_labels(t_set[1], selection, h), axis = 0)
 
 
         if (training_vectors is None):
@@ -120,12 +119,13 @@ def create_difference_vectors(data, keep_original_values = False):
 
 
 
-def extract_labels(label_data, indices, hour = 0):
+def extract_labels(filename, indices, hour = 0):
     """
     Extract labels from xarray at given indices and time
 
     Assumes labels are stored under key: "CT"    
     """
+    label_data = xr.open_dataset(filename)
     return np.array(label_data["CT"])[hour,indices[0], indices[1]].flatten()
 
 
@@ -141,4 +141,26 @@ def clean_test_vectors(vectors, indices):
     return vectors[valid], np.array([indices[0][valid], indices[1][valid]])
 
 
+def make_xarray(labels, indices, reference_filename, labelkey = "CT"):
+    """
+    returns coordination data from NETCDF file
+    """
+    data = xr.open_dataset(reference_filename)
+    coords = {'lat': data.coords['lat'], 'lon':data.coords['lon']}
+    dims = ['rows', 'cols']
+    shape = coords['lon'].shape
 
+    new_data = np.empty(shape)
+    new_data[:] = np.nan
+    new_data[indices[0],indices[1]] = labels
+    new_data = xr.DataArray(new_data, dims = dims, coords = coords, name = labelkey)
+
+    return new_data.to_dataset()
+ 
+
+
+def write_NETCDF(data, filename):
+    """
+    writes xarray dataset to NETCDF file
+    """
+    data.to_netcdf(path=filename, mode='w')

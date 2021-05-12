@@ -1,5 +1,5 @@
 #import tools.io as io
-import tools.training as tr
+import tools.training as dh
 import tools.plotting as pl
 
 import xarray as xr
@@ -14,7 +14,7 @@ from joblib import dump, load
 import time
 
 import importlib
-importlib.reload(tr)
+importlib.reload(dh)
 importlib.reload(pl)
 
 
@@ -57,19 +57,14 @@ class cloud_classifier:
         self.feat_select = None
 
         ### paramaeters
-        self.cDV = False
-        self.kOV = False
-        self.n = 100
-        self.hours=range(24)
         self.cl_type = "Tree"
+        self.feature_preselection = False
 
 
-    def set_paremeters(self, n=100, hours=range(24), cDV=True, kOV=True, cl_type = "Tree"):
-        self.cDV = cDV
-        self.kOV = kOV
-        self.n = n
-        self.hours=hours
+    def set_training_paremeters(self, n=100, hours=range(24), cDV=True, kOV=True, cl_type = "Tree", feature_preselection = False):
+
         self.cl_type = cl_type
+        self.feature_preselection = feature_preselection
 
 
 
@@ -88,7 +83,7 @@ class cloud_classifier:
             Name of mask to be used
 
         """    
-        self.masked_indices = tr.get_mask_indices(filename, selected_mask)
+        self.masked_indices = dh.get_mask_indices(filename, selected_mask)
        
 
 
@@ -138,7 +133,7 @@ class cloud_classifier:
         self.training_vectors = None
         self.training_labels = np.array([])
         for t_set in self.training_sets:
-            v,l = tr.sample_training_set(t_set[0], t_set[1], self.n, self.hours, 
+            v,l = dh.sample_training_set(t_set[0], t_set[1], self.n, self.hours, 
                                         self.masked_indices, self.cDV, self.kOV)
             if (self.training_vectors is None):
                 self.training_vectors = v
@@ -151,10 +146,17 @@ class cloud_classifier:
         if(self.training_vectors is None or self.training_labels is None):
             print("No training vectors ceated")
             return
-        self.feat_select = SelectKBest(chi2, k=k).fit(self.training_vectors, self.training_labels)
+        self.feat_select = SelectKBest(k=k).fit(self.training_vectors, self.training_labels)
 
-    def apply_feature_selection(self, vectors = None):
-        return
+
+
+    def apply_feature_selection(self, vectors):
+        if(self.feat_select is None):
+            print("No feature selection fitted")
+            return
+        return self.feat_select.transform(vectors)
+
+
 
     def train_tree_classifier(self, max_depth = None, ccp_alpha = None, training_vectors = None, training_labels = None):
         """
@@ -165,6 +167,7 @@ class cloud_classifier:
         m_depth : int
             Maximal depth of the decision tree
         """
+
         if(self.cl_type == "Tree"):
             self.cl = tree.DecisionTreeClassifier(max_depth = max_depth, ccp_alpha=ccp_alpha)
         elif(self.cl_type == "Forest"): 
@@ -172,9 +175,15 @@ class cloud_classifier:
 
 
         if (training_vectors is None or training_labels is None):
-            self.cl.fit(self.training_vectors, self.training_labels)
-        else:
-            self.cl.fit(training_vectors, training_labels)
+            training_vectors = self.training_vectors
+            training_labels = self.training_labels
+
+        if(training_vectors is None or training_labels is None):
+            print("No training data!")
+            return
+        if(self.feature_preselection):
+            training_vectors = self.apply_feature_selection(training_vectors)
+        self.cl.fit(training_vectors, training_labels)
 
 
 
@@ -202,23 +211,32 @@ class cloud_classifier:
         # store filename
         self.pred_filename = filename
         # create vectors for classifier
-        self.pred_vectors, self.pred_indices = tr.create_test_vectors(filename, 
+        self.pred_vectors, self.pred_indices = dh.create_test_vectors(filename, 
                             self.hour, self.masked_indices, self.cDV, self.kOV)
 
 
-    def predict_labels(self):
+
+
+    def predict_labels(self, vectors = None):
         """
         Predicts the labels if a corresponding set of input vectors has been created.
         """
         if(self.cl is None):
             print("No classifer trained or loaded")
             return
-        if(self.pred_vectors is None):
-            print("No input vectors created or added")
+
+
+        if (vectors is None):
+            vectors = self.pred_labels
+
+        if (vectors is None):
+            print("No test data!")
             return
+        if(self.feature_preselection):
+            vectors = self.apply_feature_selection(vectors)
 
-        self.pred_labels =  self.cl.predict(self.pred_vectors)
-
+        self.pred_labels =  self.cl.predict(vectors)
+        return self.pred_labels
 
 
     def plot_labels(self):
@@ -229,8 +247,11 @@ class cloud_classifier:
                 or self.pred_indices is None):
             print("Unsufficant data for plotting labels")
             return
-        data = tr.imbed_data(self.pred_labels, self.pred_indices, self.pred_filename)
+        data = dh.imbed_data(self.pred_labels, self.pred_indices, self.pred_filename)
         pl.plot_data(data)
+
+
+
 
 
 
@@ -278,14 +299,13 @@ class cloud_classifier:
 
         self.train_tree_classifier(max_depth, ccp_alpha, train_v, train_l)
 
-        #print(self.cl.score(test_v, test_l))
-        pred_l = self.cl.predict(test_v)
+        pred_l = self.predict_labels(test_v)
 
         correct = np.sum(pred_l == test_l)
         total = len(pred_l)
         if(verbose):
             print("Correctly identified %i out of %i labels! \nPositve rate is: %f" % (correct, total, correct/total))
-        return(self.cl.score(test_v, test_l))
+        return(correct/total)
         
 
         
@@ -309,12 +329,19 @@ class cloud_classifier:
             return
         self.create_test_vectors(filename_data, hour, self.cDV, self.kOV)
         self.predict_labels()
-        org_labels = tr.exctract_labels_fromFile(filename_labels, self.pred_indices, hour)
+        org_labels = dh.exctract_labels_fromFile(filename_labels, self.pred_indices, hour)
 
         correct = np.sum(self.pred_labels == org_labels)
         total = len(org_labels)
         print("Correctly identified %i out of %i labels! \nPositve rate is: %f" % (correct, total, correct/total))
   
+
+
+
+
+
+
+
 
     ##################################################################################
     #################         Saving and Loading parts of the data
@@ -333,8 +360,8 @@ class cloud_classifier:
                 or self.pred_indices is None):
             print("Unsufficant data for saving labels")
             return  
-        data = tr.imbed_data(self.pred_labels, self.pred_indices, self.pred_filename)
-        tr.write_NETCDF(data, filename)
+        data = dh.imbed_data(self.pred_labels, self.pred_indices, self.pred_filename)
+        dh.write_NETCDF(data, filename)
     
 
     def save_classifier(self, filename):

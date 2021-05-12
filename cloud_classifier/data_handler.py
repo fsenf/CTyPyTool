@@ -86,14 +86,15 @@ class data_handler:
 
         """
         mask_data = h5py.File(filename, 'r')
-        mask_xr = xr.Dataset()
+        m = xr.DataArray([row for row in mask_data[selected_mask]], name = selected_mask)
+        self.masked_indices = np.where(m)
 
-        for key in mask_data.keys():
-            if key == "_source":
-                continue
-            m = xr.DataArray([row for row in mask_data[key]], name = key)
-            mask_xr[key] = m
-        self.masked_indices = np.where(mask_xr[selected_mask])
+        # for key in mask_data.keys():
+        #     if key == "_source":
+        #         continue
+        #     m = xr.DataArray([row for row in mask_data[key]], name = key)
+        #     mask_xr[key] = m
+        # self.masked_indices = np.where(mask_xr[selected_mask])
         return self.masked_indices
 
 
@@ -127,8 +128,8 @@ class data_handler:
         Parameters
         ----------
         training_sets (Optional) : list of string tuples
-            Each tuple contains the filenames for a set of satellilte data and corresponding labels
-            If none are given, the method uses those trainig sets added previously to this instance of data_handler
+            List of tuples containing the filenames for training data and corresponding labels
+            Is requiered if no training sets have been added to the data_handler object
 
         Returns
         -------
@@ -204,50 +205,69 @@ class data_handler:
             Filename of the label data
         
         indices : tuple of arrays
-            indices of labels that 
+            tuple of int arrays specifing the indices of the returned labels
+
         hour : int
             0-23, hour of the day at which the data set is read
 
         Returns
         -------
-        tuple of numpy arrays
-            Array containig the test vectors and another array containing the indices those vectors belong to
+        numpy array 
+            labels at the specified indices and time
 
         """
-        return ex.exctract_labels(xr.open_dataset(filename), indices, hour)
+        return ex.exctract_labels(filename, indices, hour)
 
 
 
 
-    def imbed_data(labels, indices, filename):
+    def make_xrData(self, labels, indices, reference_filename = None, NETCDF_out = None):
         """
-        Transforms a set of predicted labels into xarray-dataset    
+        Transforms a set of predicted labels into xarray-dataset  
+
+        Parameters
+        ----------
+        labels : array-like
+            int array of label data
+
+        indices : tuple of array-like
+            tuple of int arrays specifing the indices of the given labels in respect to the
+            ccordiantes from a reference file  
+
+        reference_filename : string
+            (Optional) filename of a NETCDF file with the same scope as the label data
+            Is requiered if no training sets have benn added to the data_handler
+        
+        NETCDF_out : string
+            (Optional) If specified, the labels will be written to a NETCDF file with this name
+
+        Returns
+        -------
+        xarray dataset 
+            labels in the form of an xarray dataset
+
         """
-        sat_data = xr.open_dataset(filename)
-        # get meta data
-        coords = {'lat': sat_data.coords['lat'], 'lon':sat_data.coords['lon']}
-        lons = sat_data['lon']
-        lats = sat_data['lat']
-        dims = ['rows', 'cols']
 
-        new_data = np.empty(lons.shape)
-        new_data[:] = np.nan
-        new_data[indices[0],indices[1]] = labels
-        new_data = xr.DataArray(new_data, dims = dims, coords = coords, name = "CT")
-        new_data = new_data.to_dataset()
+        if (reference_filename is None):
+            if (self.training_sets is None):
+                print("No refrence file given!")
+                return
+            else:
+                reference_filename = self.training_sets[0][0]
+                print("Using training data as reference!")
 
-        return new_data
+        xar = ex.make_xarray(labels, indices, reference_filename)
 
+        if (not NETCDF_out is None):
+            ex.write_NETCDF(xar, NETCDF_out)
 
-
-    def write_NETCDF(data, filename):
-        data.to_netcdf(path=filename, mode='w')
+        return xar
 
 
 
     def save_training_set(self, filename, vectors, labels):
         """
-        Saves a set of already created training vectors and labels
+        Saves a set of training vectors and labels
 
         Parameters
         ----------
@@ -259,12 +279,16 @@ class data_handler:
 
     def load_training_set(self, filename):
         """
-        Loads a set of already created training vectors and labels
+        Loads a set of training vectors and labels
         
         Parameters
         ----------
         filename : string
             Name if the file the vector set is loaded from.
+
+        Returns
+        -------
+        tuple containing a set of training vectors and corresponing labels
         """
         v, l = load(filename)
         return v,l
