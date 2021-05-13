@@ -27,20 +27,46 @@ class data_handler:
         self.training_sets = []
 
         # default input channels
-        self.input_channels = ['bt062', 'bt073', 'bt087', 'bt097', 'bt108', 'bt120', 'bt134'] 
+        self.input_channels = ['bt062', 'bt073', 'bt087', 'bt097', 'bt108', 'bt120', 'bt134']
+        self.netcdf_in_version = 'auto' # other values: 'nc2013' , 'nc2016'
+        self.netcdf_out_version = 'nc2016' # other values: 'nc2013'
 
 
-    def set_input_channels(self, input_channels):
+    def set_input_channels(self, input_channels = ['bt062', 'bt073', 'bt087', 'bt097', 'bt108', 'bt120', 'bt134']):
         """
-        Sets the paramerters for the data extraction.
+        Sets the channels used for the data extraction.
 
         Parameters
         ----------
-        n : list 
-            Names of the input channels to be used from the satelite data
+        input_channels : list of strings
+            (Optional) Names of the input channels to be used from the satelite data
+            Default is: ['bt062', 'bt073', 'bt087', 'bt097', 'bt108', 'bt120', 'bt134']
         """
         self.input_channels = input_channels
 
+
+
+    def set_netcdf_version(self, in_version = 'nc2016', out_version = 'nc2016'):
+        """
+        Specifies if cloud type mapping follows old or new definitions
+
+        Parameters
+        ----------
+        in_version : string 
+            (Optional) netcdf-Version of input data. Options are 'auto', 'nc2013', 'nc2016'
+
+        out_version  string
+            (Optional) netcdf-Version of the output data.  Options are 'nc2013', 'nc2016'
+
+        """
+        if (not (in_version == 'auto' or in_version == 'nc2013' or in_version == 'nc2016')):
+            print("NETCDF-in-version must be specified as 'nc2013', 'nc2016' or 'auto' ")
+            return
+        self.netcdf_in_version = in_version
+        if (not ( out_version == 'nc2013' or out_version == 'nc2016')):
+            print("NETCDF-out-version must be specified as 'nc2013' or 'nc2016'  ")
+            return
+        self.netcdf_out_version = out_version
 
 
     def set_extraction_parameters(self, n=1000, hours=range(24), cDV=True, kOV=True):
@@ -144,8 +170,8 @@ class data_handler:
             return
 
         # Get vectors from all added training sets
-        vectors, labels = ex.sample_training_sets(self.training_sets, self.n, self.hours, 
-                                                self.masked_indices, self.input_channels)
+        vectors, labels = ex.sample_training_sets(training_sets, self.n, self.hours, self.masked_indices, 
+                                                self.input_channels)
 
         # Remove nan values
         vectors, labels = ex.clean_training_set(vectors, labels)
@@ -153,8 +179,47 @@ class data_handler:
         if (self.cDV):
             # create difference vectors
             vectors = ex.create_difference_vectors(vectors, self.kOV)
+        
+        if (self.netcdf_in_version == 'auto'):
+            self.check_netcdf_version(labels, True)
+
+        if (self.netcdf_in_version is not self.netcdf_out_version):
+            labels = ex.switch_netcdf_version(labels, self.netcdf_out_version)
 
         return vectors, labels
+
+
+    def check_netcdf_version(self, labels, set_value = False):
+        """
+        Checks if a set of labels follows the 2013 or 2016 standard.
+
+
+        Parameters
+        ----------
+        labels : array like
+            Array of labels
+
+        set_value : bool
+            If true the flag for the netcdf version of the input data is set accordingly
+        
+        Returns
+        -------
+        string or None
+            String naming the used version or None if version couldnt be determined
+        """
+        r = ex.check_netcdf_version(labels)
+        if (r is None):
+            print("Could not determine netcdf version of the labels")
+        else:
+            if (r == "nc2016"):
+                print("The cloud type data is coded after the new (2016) standard")
+            if (r == "nc2013"):
+                print("The cloud type data is coded after the old (2013) standard")
+            if (set_value):
+                print("NETCDF-in-version set accordingly")
+                self.netcdf_in_version = r
+        return r
+
 
 
     def create_test_vectors(self, filename_data, hour=0):
@@ -195,7 +260,7 @@ class data_handler:
 
 
 
-    def exctract_labels(filename, indices, hour = 0):
+    def exctract_labels(filename, indices, hour = 0,):
         """
         Extract labels from netCDF file at given indices and time
 
@@ -215,10 +280,16 @@ class data_handler:
         numpy array 
             labels at the specified indices and time
 
-        """
-        return ex.exctract_labels(filename, indices, hour)
+        """ 
+        labels = ex.exctract_labels(filename, indices, hour)
 
+        if (self.netcdf_in_version == 'auto'):
+            self.check_netcdf_version(labels, True)
 
+        if (self.netcdf_in_version is not self.netcdf_out_version):
+            labels = ex.switch_netcdf_version(labels, self.netcdf_out_version)
+
+        return labels
 
 
     def make_xrData(self, labels, indices, reference_filename = None, NETCDF_out = None):

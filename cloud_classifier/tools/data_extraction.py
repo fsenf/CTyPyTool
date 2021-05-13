@@ -164,3 +164,71 @@ def write_NETCDF(data, filename):
     writes xarray dataset to NETCDF file
     """
     data.to_netcdf(path=filename, mode='w')
+
+
+def check_netcdf_version(labels):
+    """
+    checks if cloud type labels are mapped by the 2013-netcdf standard
+
+    uses occurences in layers 16-19 (only in use at 2013 standard)
+    and 7,9,11,13 (only in use at 2016 standard) 
+    """
+
+    high_sum = odd_sum = 0
+    for i in range(16,20):
+        high_sum += (labels == i).sum()
+    for i in range(7,14,2):
+        odd_sum = (labels == i).sum()
+
+    if (high_sum > 0 and odd_sum == 0):
+        return 'nc2013'
+    if (high_sum == 0 and odd_sum > 0):
+        return 'nc2016'
+    return None
+
+    """
+    maps netcdf cloud types from the 2013 standard to the 2016 standard
+    """
+def switch_netcdf_version(labels, target_version):
+    if (target_version == 'nc2016'):
+        return switch_2016(labels)
+    if (target_version == 'nc2013'):
+        return switch_2013(labels)
+
+
+def switch_2016(labels):
+    """
+    maps netcdf cloud types from the 2013 standard to the 2016 standard
+    """
+    labels[labels == 6.0] = 5.0 # very low clouds
+    labels[labels == 8.0] = 6.0 # low clouds
+    labels[labels == 10.0] = 7.0 # middle clouds
+    labels[labels == 12.0] = 8.0 # high opaque clouds
+    labels[labels == 14.0] = 9.0 # very high opaque clouds
+    labels[labels == 19.0] = 10.0 # fractional clouds
+    labels[labels == 15.0] = 11.0 # high semitransparent thin clouds
+    labels[labels == 16.0] = 12.0 # high semitransparent moderatly thick clouds
+    labels[labels == 17.0] = 13.0 # high semitransparent thick clouds
+    labels[labels == 18.0] = 14.0 # high semitransparent above low or medium clouds
+    # missing: 15:  High semitransparent above snow/ice
+    return labels
+
+
+
+def switch_2013(labels):
+    """
+    maps netcdf cloud types from the 2016 standard to the 2013 standard
+    """
+    labels[labels == 15.0] = 18.0 # high semitransparent above snow/ice
+    labels[labels == 14.0] = 18.0 # high semitransparent above low or medium clouds
+    labels[labels == 13.0] = 17.0 # high semitransparent thick clouds
+    labels[labels == 12.0] = 16.0 # high semitransparent moderatly thick clouds
+    labels[labels == 11.0] = 15.0 # high semitransparent thin clouds
+    labels[labels == 10.0] = 19.0 # fractional clouds
+    labels[labels == 9.0] = 14.0 # very high opaque clouds
+    labels[labels == 8.0] = 12.0 # high opaque clouds
+    labels[labels == 7.0] = 10.0 # middle clouds
+    labels[labels == 6.0] = 8.0 # low clouds
+    labels[labels == 5.0] = 6.0 # very low clouds
+
+    return labels
