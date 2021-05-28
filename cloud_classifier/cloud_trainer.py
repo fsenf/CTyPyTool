@@ -24,7 +24,7 @@ importlib.reload(pl)
 
 class cloud_trainer:
     """
-    Trainable Classifier for cloud cl_type prediction from satelite data.
+    Trainable Classifier for cloud classifer_type prediction from satelite data.
 
 
 
@@ -56,17 +56,29 @@ class cloud_trainer:
         self.feat_select = None
 
         ### paramaeters
-        self.cl_type = "Tree"
+        self.classifer_type = "Tree"
         self.max_depth = 20
         self.ccp_alpha = 0
         self.feature_preselection = False
         self.n_estimators = 75
 
 
-    def set_training_paremeters(self, cl_type = "Tree", feature_preselection = False):
+    def set_training_paremeters(self, classifer_type = "Tree", feature_preselection = False, max_depth = 20):
+        """
+        Sets the paramerters of the classifer.
 
-        self.cl_type = cl_type
+        Parameters
+        ----------
+        classifer_type : string
+            (Optional) Type of classifer that is trained
+
+        feature_preselection : bool
+            (Optional) Set to use feature preselection to only use the most salient features
+
+        """
+        self.classifer_type = classifer_type
         self.feature_preselection = feature_preselection
+        self.max_depth = max_depth
 
 
     def fit_feature_selection(self, k = 20):
@@ -85,7 +97,7 @@ class cloud_trainer:
 
 
 
-    def train_tree_classifier(self, training_vectors, training_labels):
+    def train_classifier(self, training_vectors, training_labels):
         """
         Trains the classifier using previously created training_vectors
         
@@ -95,9 +107,9 @@ class cloud_trainer:
             Maximal depth of the decision tree
         """
 
-        if(self.cl_type == "Tree"):
+        if(self.classifer_type == "Tree"):
             self.cl = tree.DecisionTreeClassifier(max_depth = self.max_depth, ccp_alpha = self.ccp_alpha)
-        elif(self.cl_type == "Forest"): 
+        elif(self.classifer_type == "Forest"): 
             self.cl = RandomForestClassifier(n_estimators = self.n_estimators, max_depth = self.max_depth, 
                                                 ccp_alpha = self.ccp_alpha)
 
@@ -152,7 +164,7 @@ class cloud_trainer:
 
         train_v, test_v, train_l, test_l = train_test_split(vectors, labels, random_state=0)
 
-        self.train_tree_classifier(train_v, train_l)
+        self.train_classifier(train_v, train_l)
 
         pred_l = self.predict_labels(test_v)
 
@@ -164,7 +176,7 @@ class cloud_trainer:
         
 
         
-    def evaluate_classifier(self, filename_data, filename_labels, hour = 0):
+    def evaluate_classifier(self, vectors, labels):
         """
         Evaluates an already trained classifier with a new set of data and labels
         
@@ -182,14 +194,12 @@ class cloud_trainer:
         if(self.cl is None):
             print("No classifer trained or loaded")
             return
-        self.create_test_vectors(filename_data, hour, self.cDV, self.kOV)
-        self.predict_labels()
-        org_labels = dh.exctract_labels_fromFile(filename_labels, self.pred_indices, hour)
+        predicted_labels = self.predict_labels(vectors)
 
-        correct = np.sum(self.pred_labels == org_labels)
-        total = len(org_labels)
+        correct = np.sum(predicted_labels == labels)
+        total = len(labels)
         print("Correctly identified %i out of %i labels! \nPositve rate is: %f" % (correct, total, correct/total))
-  
+        return(correct/total)
 
 
 
@@ -202,22 +212,6 @@ class cloud_trainer:
     #################         Saving and Loading parts of the data
     ##################################################################################
 
-    # def export_labels(self, filename):
-    #     """
-    #     Saves predicted labels as netcdf file
-
-    #     Parameters
-    #     ----------
-    #     filename : string
-    #         Name of the file in which the labels will be written
-    #     """
-    #     if (self.pred_labels is None or self.pred_filename is None
-    #             or self.pred_indices is None):
-    #         print("Unsufficant data for saving labels")
-    #         return  
-    #     data = dh.imbed_data(self.pred_labels, self.pred_indices, self.pred_filename)
-    #     dh.write_NETCDF(data, filename)
-    
 
     def save_classifier(self, filename):
         """

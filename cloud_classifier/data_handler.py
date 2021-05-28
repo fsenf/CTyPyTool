@@ -17,9 +17,9 @@ class data_handler:
 
 
     def __init__(self):
-        self.cDV = False
-        self.kOV = False
-        self.n = 1000
+        self.difference_vectors = False
+        self.original_values = False
+        self.samples = 1000
         self.hours=range(24)
 
 
@@ -28,11 +28,11 @@ class data_handler:
 
         # default input channels
         self.input_channels = ['bt062', 'bt073', 'bt087', 'bt097', 'bt108', 'bt120', 'bt134']
-        self.netcdf_in_version = 'auto' # other values: 'nc2013' , 'nc2016'
-        self.netcdf_out_version = 'nc2016' # other values: 'nc2013'
+        self.nwcsaf_in_version = 'auto' # other values: 'v2013' , 'v2018'
+        self.nwcsaf_out_version = 'v2018' # other values: 'v2013'
 
 
-    def set_input_channels(self, input_channels = ['bt062', 'bt073', 'bt087', 'bt097', 'bt108', 'bt120', 'bt134']):
+    def set_input_channels(self, input_channels):
         """
         Sets the channels used for the data extraction.
 
@@ -46,51 +46,51 @@ class data_handler:
 
 
 
-    def set_netcdf_version(self, in_version = 'nc2016', out_version = 'nc2016'):
+    def set_nwcsaf_version(self, in_version = 'v2018', out_version = 'v2018'):
         """
         Specifies if cloud type mapping follows old or new definitions
 
         Parameters
         ----------
         in_version : string 
-            (Optional) netcdf-Version of input data. Options are 'auto', 'nc2013', 'nc2016'
+            (Optional) netcdf-Version of input data. Options are 'auto', 'v2013', 'v2018'
 
         out_version  string
-            (Optional) netcdf-Version of the output data.  Options are 'nc2013', 'nc2016'
+            (Optional) netcdf-Version of the output data.  Options are 'v2013', 'v2018'
 
         """
-        if (not (in_version == 'auto' or in_version == 'nc2013' or in_version == 'nc2016')):
-            print("NETCDF-in-version must be specified as 'nc2013', 'nc2016' or 'auto' ")
+        if (not (in_version == 'auto' or in_version == 'v2013' or in_version == 'v2018')):
+            print("nwcsaf-in-version must be specified as 'v2013', 'v2018' or 'auto' ")
             return
-        self.netcdf_in_version = in_version
-        if (not ( out_version == 'nc2013' or out_version == 'nc2016')):
-            print("NETCDF-out-version must be specified as 'nc2013' or 'nc2016'  ")
+        self.nwcsaf_in_version = in_version
+        if (not ( out_version == 'v2013' or out_version == 'v2018')):
+            print("nwcsaf-out-version must be specified as 'v2013' or 'v2018' ")
             return
-        self.netcdf_out_version = out_version
+        self.nwcsaf_out_version = out_version
 
 
-    def set_extraction_parameters(self, n=1000, hours=range(24), cDV=True, kOV=True):
+    def set_extraction_parameters(self, samples=1000, hours=range(24), difference_vectors=True, original_values=True):
         """
         Sets the paramerters for the data extraction.
 
         Parameters
         ----------
-        n : int
+        samples : int
             (Optional) Number of samples taken for each time value for each training set
 
         hour : list
             (Optional) Hours from which vectors are cerated
 
-        cDV: bool
+        difference_vectors: bool
             (Optional) Calculate inter-value-difference-vectors for use as training vectors. Default True.
 
-        kOV : bool
+        original_values : bool
             (Optional) When using difference vectors, also keep original absolut values as 
             first entries in vector. Default True.
         """
-        self.cDV = cDV
-        self.kOV = kOV
-        self.n = n
+        self.difference_vectors = difference_vectors
+        self.original_values = original_values
+        self.samples = samples
         self.hours=hours
 
         
@@ -127,7 +127,7 @@ class data_handler:
 
     def add_training_files(self, filename_data, filename_labels):
         """
-        Takes filenames of satelite data and according labels and adds it to the data_handler
+        Takes filenames of satelite data and according labels and adds it to the data_handler.
         
         Parameters
         ----------
@@ -145,9 +145,9 @@ class data_handler:
 
     def create_training_set(self, training_sets = None):
         """
-        Creates a set of training vectors from NETCDF datasets
+        Creates a set of training vectors from NETCDF datasets.
 
-        Samples a set of satellite data and corresponding labels at n random positions 
+        Samples a set of satellite data and corresponding labels at samples random positions 
         for each hour specified. 
 
 
@@ -170,26 +170,26 @@ class data_handler:
             return
 
         # Get vectors from all added training sets
-        vectors, labels = ex.sample_training_sets(training_sets, self.n, self.hours, self.masked_indices, 
+        vectors, labels = ex.sample_training_sets(training_sets, self.samples, self.hours, self.masked_indices, 
                                                 self.input_channels)
 
         # Remove nan values
         vectors, labels = ex.clean_training_set(vectors, labels)
 
-        if (self.cDV):
+        if (self.difference_vectors):
             # create difference vectors
-            vectors = ex.create_difference_vectors(vectors, self.kOV)
+            vectors = ex.create_difference_vectors(vectors, self.original_values)
         
-        if (self.netcdf_in_version == 'auto'):
-            self.check_netcdf_version(labels, True)
+        if (self.nwcsaf_in_version == 'auto'):
+            self.check_nwcsaf_version(labels, True)
 
-        if (self.netcdf_in_version is not self.netcdf_out_version):
-            labels = ex.switch_netcdf_version(labels, self.netcdf_out_version)
+        if (self.nwcsaf_in_version is not self.nwcsaf_out_version):
+            labels = ex.switch_nwcsaf_version(labels, self.nwcsaf_out_version)
 
         return vectors, labels
 
 
-    def check_netcdf_version(self, labels, set_value = False):
+    def check_nwcsaf_version(self, labels, set_value = False):
         """
         Checks if a set of labels follows the 2013 or 2016 standard.
 
@@ -200,24 +200,24 @@ class data_handler:
             Array of labels
 
         set_value : bool
-            If true the flag for the netcdf version of the input data is set accordingly
+            If true the flag for the ncwsaf version of the input data is set accordingly
         
         Returns
         -------
         string or None
             String naming the used version or None if version couldnt be determined
         """
-        r = ex.check_netcdf_version(labels)
+        r = ex.check_nwcsaf_version(labels)
         if (r is None):
-            print("Could not determine netcdf version of the labels")
+            print("Could not determine ncwsaf version of the labels")
         else:
-            if (r == "nc2016"):
+            if (r == "v2018"):
                 print("The cloud type data is coded after the new (2016) standard")
-            if (r == "nc2013"):
+            if (r == "v2013"):
                 print("The cloud type data is coded after the old (2013) standard")
             if (set_value):
-                print("NETCDF-in-version set accordingly")
-                self.netcdf_in_version = r
+                print("nwcsaf-in-version set accordingly")
+                self.nwcsaf_in_version = r
         return r
 
 
@@ -250,8 +250,8 @@ class data_handler:
 
         vectors = ex.extract_feature_vectors(sat_data, indices, hour, self.input_channels)
         vectors, indices = ex.clean_test_vectors(vectors, indices)
-        if (self.cDV):
-            vectors = ex.create_difference_vectors(vectors, self.kOV)
+        if (self.difference_vectors):
+            vectors = ex.create_difference_vectors(vectors, self.original_values)
 
         return vectors, indices
 
@@ -260,7 +260,7 @@ class data_handler:
 
 
 
-    def exctract_labels(filename, indices, hour = 0,):
+    def extract_labels(self, filename, indices, hour = 0,):
         """
         Extract labels from netCDF file at given indices and time
 
@@ -281,13 +281,13 @@ class data_handler:
             labels at the specified indices and time
 
         """ 
-        labels = ex.exctract_labels(filename, indices, hour)
+        labels = ex.extract_labels(filename, indices, hour)
 
-        if (self.netcdf_in_version == 'auto'):
-            self.check_netcdf_version(labels, True)
+        if (self.nwcsaf_in_version == 'auto'):
+            self.check_nwcsaf_version(labels, True)
 
-        if (self.netcdf_in_version is not self.netcdf_out_version):
-            labels = ex.switch_netcdf_version(labels, self.netcdf_out_version)
+        if (self.nwcsaf_in_version is not self.nwcsaf_out_version):
+            labels = ex.switch_nwcsaf_version(labels, self.nwcsaf_out_version)
 
         return labels
 
@@ -299,15 +299,14 @@ class data_handler:
         Parameters
         ----------
         labels : array-like
-            int array of label data
+            Int array of label data
 
         indices : tuple of array-like
-            tuple of int arrays specifing the indices of the given labels in respect to the
-            ccordiantes from a reference file  
+            Indices of the given labels in respect to the coordiantes from a reference file  
 
         reference_filename : string
-            (Optional) filename of a NETCDF file with the same scope as the label data
-            Is requiered if no training sets have benn added to the data_handler
+            (Optional) filename of a NETCDF file with the same scope as the label data.
+            This field is requiered if no training sets have been added to the data_handler!
         
         NETCDF_out : string
             (Optional) If specified, the labels will be written to a NETCDF file with this name
@@ -318,7 +317,6 @@ class data_handler:
             labels in the form of an xarray dataset
 
         """
-
         if (reference_filename is None):
             if (self.training_sets is None):
                 print("No refrence file given!")
@@ -336,7 +334,7 @@ class data_handler:
 
 
 
-    def save_training_set(self, filename, vectors, labels):
+    def save_training_set(self, vectors, labels, filename):
         """
         Saves a set of training vectors and labels
 
@@ -344,6 +342,12 @@ class data_handler:
         ----------
         filename : string
             Name of the file into which the vector set is saved.
+
+        vectors : array like
+            The feature vectors of the training set.
+
+        labels : array like
+            The labels of the training set
         """
         dump([vectors, labels], filename)
 
@@ -359,61 +363,7 @@ class data_handler:
 
         Returns
         -------
-        tuple containing a set of training vectors and corresponing labels
+        Tuple containing a set of training vectors and corresponing labels
         """
         v, l = load(filename)
         return v,l
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#########################################################################################
-# def cleanData(data, indices):
-#     counter = 0
-#     valid = np.ones(len(indices[0]), dtype=bool)
-#     for i in range(len(indices[0])):
-#         if np.isnan(data[i]).any():
-#             valid[i] = False
-#             counter += 1
-#     cleaned_indices = np.array([indices[0][valid], indices[1][valid]])
-
-#     return cleaned_indices
-
-# def clean_indices(data, indices):
-#     """
-#     Remove indices pointing to NaN-values in data
-    
-#     """
-#     ci = indices
-#     data = data[:][:][ci[0],ci[1]]
-#     for v in data.variables:
-#         if "bt" in v:
-#             for i in range(24):
-#                 di = np.array(data[v])[i,ci[0],ci[1]]
-#                 #data = data[v][i,ci[0],ci[1]]
-
-#                 ni = np.where(~np.isnan(di))
-#                 ci = [ci[0][ni[0]],ci[1][ni[0]]]
-
-#     return ci

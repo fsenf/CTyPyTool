@@ -166,7 +166,7 @@ def write_NETCDF(data, filename):
     data.to_netcdf(path=filename, mode='w')
 
 
-def check_netcdf_version(labels):
+def check_nwcsaf_version(labels):
     """
     checks if cloud type labels are mapped by the 2013-netcdf standard
 
@@ -181,18 +181,18 @@ def check_netcdf_version(labels):
         odd_sum = (labels == i).sum()
 
     if (high_sum > 0 and odd_sum == 0):
-        return 'nc2013'
+        return 'v2013'
     if (high_sum == 0 and odd_sum > 0):
-        return 'nc2016'
+        return 'v2018'
     return None
 
     """
     maps netcdf cloud types from the 2013 standard to the 2016 standard
     """
-def switch_netcdf_version(labels, target_version):
-    if (target_version == 'nc2016'):
+def switch_nwcsaf_version(labels, target_version):
+    if (target_version == 'v2018'):
         return switch_2016(labels)
-    if (target_version == 'nc2013'):
+    if (target_version == 'v2013'):
         return switch_2013(labels)
 
 
