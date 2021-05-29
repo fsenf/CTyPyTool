@@ -3,6 +3,7 @@ import xarray as xr
 import random
 import h5py 
 import tools.data_extraction as ex
+import tools.plotting as pl
 from joblib import dump, load
 
 import importlib
@@ -282,6 +283,15 @@ class data_handler:
             labels at the specified indices and time
 
         """ 
+        if (indices is None):
+            # get all non-nan indices from the first layer specified in input channels
+            if (not self.masked_indices is None):
+                indices = self.masked_indices
+                print("No indices specified, using mask indices")
+
+            else:
+                print("No mask indices given, using complete data set")
+
         labels = ex.extract_labels(filename, indices, hour)
 
         if (self.nwcsaf_in_version == 'auto'):
@@ -374,3 +384,17 @@ class data_handler:
         """
         v, l = load(filename)
         return v,l
+
+
+    def plot_labels(self, labels = None, filename = None, hour = None):
+        """
+        """
+        if (labels is None and filename is None):
+            print("No data given!")
+            return
+        elif (labels is None):
+            labels = xr.open_dataset(filename)
+
+
+
+        pl.plot_data(labels, indices = self.masked_indices, hour = hour)

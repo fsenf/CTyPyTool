@@ -2,10 +2,12 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy
 import numpy as np
-        
-def plot_data(data, lons = None, lats = None):
+import shapely
+import xarray as xr
+
+def plot_data(data, indices = None, lons = None, lats = None, hour = None):
     '''
-    Plots labels from an xarray-dataset onto a worldmap    
+    Plots labels from an xarray onto a worldmap    
     
     
     Parameters
@@ -20,6 +22,7 @@ def plot_data(data, lons = None, lats = None):
         2D-array of the lattidude values for each datapoint
     
     '''
+    shapely.speedups.disable()
     if lons is None or lats is None:
         try:
             lons = data.coords['lon']
@@ -28,9 +31,19 @@ def plot_data(data, lons = None, lats = None):
             print("Longitude/Lattide variables not found!")
             return
 
-    data = data["CT"]
-
+    if (hour is None):
+        data = data["CT"]
+    else:
+        data = data["CT"][hour]
+        
     # shrink to area
+    new_data = np.empty(data.shape)
+    new_data[:] = np.nan
+    if (indices is None):
+        indices = np.where(~np.isnan(data))
+    data = np.array(data)[indices[0], indices[1]]
+    new_data[indices[0],indices[1]] = data
+    #new_data = xr.DataArray(new_data)
 
 
     #lons = lons[~np.isnan(data)]
@@ -46,7 +59,7 @@ def plot_data(data, lons = None, lats = None):
     ax.add_feature(cartopy.feature.LAND, edgecolor='black')
     ax.add_feature(cartopy.feature.LAKES, edgecolor='black')
     ax.add_feature(cartopy.feature.RIVERS)  
-    ax.contourf(lons, lats, data, cmap = "jet")
+    ax.contourf(lons, lats, new_data, cmap = "jet")
     plt.show()
 
 

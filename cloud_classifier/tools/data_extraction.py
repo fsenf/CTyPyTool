@@ -126,6 +126,8 @@ def extract_labels(filename, indices, hour = 0):
     Assumes labels are stored under key: "CT"    
     """
     label_data = xr.open_dataset(filename)
+    if (indices is None):
+         indices = np.where(~np.isnan(label_data["CT"][hour]))
     return np.array(label_data["CT"])[hour,indices[0], indices[1]].flatten()
 
 

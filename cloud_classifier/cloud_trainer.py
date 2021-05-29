@@ -154,6 +154,8 @@ class cloud_trainer:
         Training vectors are split into test and trainig set
         """
 
+        # save a possible already trained classifier
+        tmp = self.cl
         train_v, test_v, train_l, test_l = train_test_split(vectors, labels, random_state=0)
 
         self.train_classifier(train_v, train_l)
@@ -162,6 +164,8 @@ class cloud_trainer:
 
         correct = np.sum(pred_l == test_l)
         total = len(pred_l)
+        #restore classifier
+        self.cl = tmp
         if(verbose):
             print("Correctly identified %i out of %i labels! \nPositve rate is: %f" % (correct, total, correct/total))
         return(correct/total)
