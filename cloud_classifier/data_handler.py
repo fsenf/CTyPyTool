@@ -17,14 +17,16 @@ class data_handler:
 
 
     def __init__(self):
-        self.difference_vectors = False
-        self.original_values = False
+        self.difference_vectors = True
+        self.original_values = True
         self.samples = 1000
         self.hours=range(24)
 
 
         self.masked_indices = None
         self.training_sets = []
+        self.latest_test_file = None
+
 
         # default input channels
         self.input_channels = ['bt062', 'bt073', 'bt087', 'bt097', 'bt108', 'bt120', 'bt134']
@@ -222,14 +224,14 @@ class data_handler:
 
 
 
-    def create_test_vectors(self, filename_data, hour=0):
+    def create_test_vectors(self, filename, hour=0):
         """
         Extracts feature vectors from given NETCDF file at a certain hour.
 
 
         Parameters
         ----------
-        filename_data : string
+        filename : string
             Filename of the sattelite data
 
         hour : int
@@ -241,11 +243,11 @@ class data_handler:
             Array containig the test vectors and another array containing the indices those vectors belong to
 
         """
-        sat_data = xr.open_dataset(filename_data)
+        sat_data = xr.open_dataset(filename)
         indices = self.masked_indices
         if (indices is None):
             # get all non-nan indices from the first layer specified in input channels
-            indices = np.where(~np.isnan(sat_data[input_channels[0]][0]))
+            indices = np.where(~np.isnan(sat_data[self.input_channels[0]][0]))
             print("No mask indices given, using complete data set")
 
         vectors = ex.extract_feature_vectors(sat_data, indices, hour, self.input_channels)
@@ -253,9 +255,8 @@ class data_handler:
         if (self.difference_vectors):
             vectors = ex.create_difference_vectors(vectors, self.original_values)
 
+        self.latest_test_file = filename
         return vectors, indices
-
-
 
 
 
@@ -266,7 +267,7 @@ class data_handler:
 
         Parameters
         ----------
-        filename_data : string
+        filename : string
             Filename of the label data
         
         indices : tuple of arrays
@@ -318,12 +319,18 @@ class data_handler:
 
         """
         if (reference_filename is None):
-            if (self.training_sets is None):
-                print("No refrence file given!")
-                return
-            else:
+            print("No refrence file given!")
+            if (not self.latest_test_file is None):
+                reference_filename = self.latest_test_file
+                print("Using latest test file as reference")
+
+            elif (not self.training_sets is None):
                 reference_filename = self.training_sets[0][0]
                 print("Using training data as reference!")
+
+            else:
+                print("Can not make xarray without reference file")
+                return
 
         xar = ex.make_xarray(labels, indices, reference_filename)
 

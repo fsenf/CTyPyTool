@@ -30,14 +30,6 @@ class cloud_trainer:
 
     Methods
     -------
-    add_training_sets(filename_data, filename_labels)
-        Reads set of satelite data and according labels and adds it into the classifier
-    
-    create_trainig_set(n)
-        Creates training vectors from all added trainig sets
-
-    add_h5mask(filename, selected_mask = None)
-        Reads mask-data from h5 file and sets mask for the classifier if specified
 
     """
 
