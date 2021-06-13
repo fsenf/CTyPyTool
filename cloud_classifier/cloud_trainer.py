@@ -1,28 +1,26 @@
-#import tools.io as io
-import tools.training as dh
-import tools.plotting as pl
-
 import xarray as xr
 import numpy as np
+from joblib import dump, load
 
 from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import SelectKBest, chi2
 
-from joblib import dump, load
-import time
+import tools.training as dh
+import tools.plotting as pl
+import base_class
 
 import importlib
 importlib.reload(dh)
 importlib.reload(pl)
+importlib.reload(base_class)
 
 
 
 
 
-
-class cloud_trainer:
+class cloud_trainer(base_class.base_class):
     """
     Trainable Classifier for cloud classifer_type prediction from satelite data.
 
@@ -34,19 +32,14 @@ class cloud_trainer:
     """
 
 
-    def __init__(self):
-        self.training_vectors = None
-        self.training_labels = None
-        self.masked_indices = None
+    def __init__(self, **kwargs):
+        self.set_default_parameters(reset_data = True)
+        super().__init__(self.__dict__, **kwargs)
+   
 
-        self.pred_vectors = None
-        self.pred_labels = None
-        self.pred_indices = None
-        self.pred_filename = None
 
-        self.cl = None
-        self.feat_select = None
 
+    def set_default_parameters(self, reset_data = False):
         ### paramaeters
         self.classifer_type = "Tree"
         self.max_depth = 20
@@ -54,30 +47,16 @@ class cloud_trainer:
         self.feature_preselection = False
         self.n_estimators = 75
 
-
-    def set_training_paremeters(self, classifer_type = "Tree", feature_preselection = False, max_depth = 20):
-        """
-        Sets the paramerters of the classifer.
-
-        Parameters
-        ----------
-        classifer_type : string
-            (Optional) Type of classifer that is trained
-
-        feature_preselection : bool
-            (Optional) Set to use feature preselection to only use the most salient features
-
-        """
-        self.classifer_type = classifer_type
-        self.feature_preselection = feature_preselection
-        self.max_depth = max_depth
+        if (reset_data):
+            self.pred_labels = None
+            self.pred_indices = None
+            self.pred_filename = None
+            self.cl = None
+            self.feat_select = None
 
 
-    def fit_feature_selection(self, k = 20):
-        if(self.training_vectors is None or self.training_labels is None):
-            print("No training vectors ceated")
-            return
-        self.feat_select = SelectKBest(k=k).fit(self.training_vectors, self.training_labels)
+    def fit_feature_selection(self, training_vectors, training_labels, k = 20):
+        self.feat_select = SelectKBest(k=k).fit(training_vectors, training_labels)
 
 
 
@@ -233,3 +212,21 @@ class cloud_trainer:
 
 
 
+'''
+    def set_training_paremeters(self, classifer_type = "Tree", feature_preselection = False, max_depth = 20):
+        """
+        Sets the paramerters of the classifer.
+
+        Parameters
+        ----------
+        classifer_type : string
+            (Optional) Type of classifer that is trained
+
+        feature_preselection : bool
+            (Optional) Set to use feature preselection to only use the most salient features
+
+        """
+        self.classifer_type = classifer_type
+        self.feature_preselection = feature_preselection
+        self.max_depth = max_depth
+'''

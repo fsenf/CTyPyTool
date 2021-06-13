@@ -2,14 +2,19 @@ import numpy as np
 import xarray as xr
 import random
 import h5py 
+from joblib import dump, load
+
 import tools.data_extraction as ex
 import tools.plotting as pl
-from joblib import dump, load
+import base_class
+
+
 
 import importlib
 importlib.reload(ex)
+importlib.reload(base_class)
 
-class data_handler:
+class data_handler(base_class.base_class):
 
     """
     Class that faciltates data extraction and processing for the use in machine learning from NETCDF-satelite data.
@@ -17,86 +22,26 @@ class data_handler:
 
 
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+
+        self.set_default_parameters(reset_data = True)
+        super().__init__(self.__dict__, **kwargs)
+   
+
+    def set_default_parameters(self, reset_data = False):
         self.difference_vectors = True
         self.original_values = True
         self.samples = 1000
         self.hours=range(24)
-
-
-        self.masked_indices = None
-        self.training_sets = []
-        self.latest_test_file = None
-
-
-        # default input channels
         self.input_channels = ['bt062', 'bt073', 'bt087', 'bt097', 'bt108', 'bt120', 'bt134']
         self.nwcsaf_in_version = 'auto' # other values: 'v2013' , 'v2018'
         self.nwcsaf_out_version = 'v2018' # other values: 'v2013'
 
+        if (reset_data):
+            self.masked_indices = None
+            self.training_sets = None
+            self.latest_test_file = None
 
-    def set_input_channels(self, input_channels):
-        """
-        Sets the channels used for the data extraction.
-
-        Parameters
-        ----------
-        input_channels : list of strings
-            (Optional) Names of the input channels to be used from the satelite data
-            Default is: ['bt062', 'bt073', 'bt087', 'bt097', 'bt108', 'bt120', 'bt134']
-        """
-        self.input_channels = input_channels
-
-
-
-    def set_nwcsaf_version(self, in_version = 'v2018', out_version = 'v2018'):
-        """
-        Specifies if cloud type mapping follows old or new definitions
-
-        Parameters
-        ----------
-        in_version : string 
-            (Optional) netcdf-Version of input data. Options are 'auto', 'v2013', 'v2018'
-
-        out_version  string
-            (Optional) netcdf-Version of the output data.  Options are 'v2013', 'v2018'
-
-        """
-        if (not (in_version == 'auto' or in_version == 'v2013' or in_version == 'v2018')):
-            print("nwcsaf-in-version must be specified as 'v2013', 'v2018' or 'auto' ")
-            return
-        self.nwcsaf_in_version = in_version
-        if (not ( out_version == 'v2013' or out_version == 'v2018')):
-            print("nwcsaf-out-version must be specified as 'v2013' or 'v2018' ")
-            return
-        self.nwcsaf_out_version = out_version
-
-
-    def set_extraction_parameters(self, samples=1000, hours=range(24), difference_vectors=True, original_values=True):
-        """
-        Sets the paramerters for the data extraction.
-
-        Parameters
-        ----------
-        samples : int
-            (Optional) Number of samples taken for each time value for each training set
-
-        hour : list
-            (Optional) Hours from which vectors are cerated
-
-        difference_vectors: bool
-            (Optional) Calculate inter-value-difference-vectors for use as training vectors. Default True.
-
-        original_values : bool
-            (Optional) When using difference vectors, also keep original absolut values as 
-            first entries in vector. Default True.
-        """
-        self.difference_vectors = difference_vectors
-        self.original_values = original_values
-        self.samples = samples
-        self.hours=hours
-
-        
 
     def set_indices_from_mask(self, filename, selected_mask):
         """
@@ -141,6 +86,8 @@ class data_handler:
             Filename of the label dataset
 
         """
+        if (self.training_sets is None):
+            self.training_sets = []
         self.training_sets.append([filename_data, filename_labels])
         return
 
@@ -388,6 +335,7 @@ class data_handler:
 
     def plot_labels(self, labels = None, filename = None, hour = None):
         """
+        Plots labels either from a xarray dataset or NetCDF file-
         """
         if (labels is None and filename is None):
             print("No data given!")
@@ -398,3 +346,71 @@ class data_handler:
 
 
         pl.plot_data(labels, indices = self.masked_indices, hour = hour)
+
+
+
+
+# obsolete by basecklass
+'''
+    def set_input_channels(self, input_channels):
+        """
+        Sets the channels used for the data extraction.
+
+        Parameters
+        ----------
+        input_channels : list of strings
+            (Optional) Names of the input channels to be used from the satelite data
+            Default is: ['bt062', 'bt073', 'bt087', 'bt097', 'bt108', 'bt120', 'bt134']
+        """
+        self.input_channels = input_channels
+
+
+    def set_nwcsaf_version(self, in_version = 'v2018', out_version = 'v2018'):
+        """
+        Specifies if cloud type mapping follows old or new definitions
+
+        Parameters
+        ----------
+        in_version : string 
+            (Optional) netcdf-Version of input data. Options are 'auto', 'v2013', 'v2018'
+
+        out_version  string
+            (Optional) netcdf-Version of the output data.  Options are 'v2013', 'v2018'
+
+        """
+        if (not (in_version == 'auto' or in_version == 'v2013' or in_version == 'v2018')):
+            print("nwcsaf-in-version must be specified as 'v2013', 'v2018' or 'auto' ")
+            return
+        self.nwcsaf_in_version = in_version
+        if (not ( out_version == 'v2013' or out_version == 'v2018')):
+            print("nwcsaf-out-version must be specified as 'v2013' or 'v2018' ")
+            return
+        self.nwcsaf_out_version = out_version
+
+
+    def set_extraction_parameters(self, samples=1000, hours=range(24), difference_vectors=True, original_values=True):
+        """
+        Sets the paramerters for the data extraction.
+
+        Parameters
+        ----------
+        samples : int
+            (Optional) Number of samples taken for each time value for each training set
+
+        hour : list
+            (Optional) Hours from which vectors are cerated
+
+        difference_vectors: bool
+            (Optional) Calculate inter-value-difference-vectors for use as training vectors. Default True.
+
+        original_values : bool
+            (Optional) When using difference vectors, also keep original absolut values as 
+            first entries in vector. Default True.
+        """
+        self.difference_vectors = difference_vectors
+        self.original_values = original_values
+        self.samples = samples
+        self.hours=hours
+
+        
+'''

@@ -5,7 +5,7 @@ import numpy as np
 import shapely
 import xarray as xr
 
-def plot_data(data, indices = None, lons = None, lats = None, hour = None):
+def plot_data(data, indices = None, hour = None):
     '''
     Plots labels from an xarray onto a worldmap    
     
@@ -23,19 +23,37 @@ def plot_data(data, indices = None, lons = None, lats = None, hour = None):
     
     '''
     shapely.speedups.disable()
-    if lons is None or lats is None:
-        try:
-            lons = data.coords['lon']
-            lats = data.coords['lat']
-        except Exception:
-            print("Longitude/Lattide variables not found!")
-            return
+    try:
+        lons = data.coords['lon']
+        lats = data.coords['lat']
+    except Exception:
+        print("Longitude/Lattide variables not found!")
+        return
 
     if (hour is None):
         data = data["CT"]
     else:
         data = data["CT"][hour]
-        
+
+
+
+    ct_colors = ['#007800', '#000000','#fabefa','#dca0dc',
+                '#ff6400', '#ffb400', '#f0f000', '#d7d796',
+                '#e6e6e6',  '#c800c8','#0050d7', '#00b4e6',
+                '#00f0f0', '#5ac8a0', ]
+    ct_indices = [ 1.5, 2.5, 3.5, 4.5, 
+                   5.5, 6.5, 7.5, 8.5, 
+                   9.5, 10.5, 11.5, 12.5,
+                   13.5, 14.5, 15.5]
+
+    ct_labels = ['land', 'sea', 'snow', 'sea ice', 
+                 'very low', 'low', 'middle', 'high opaque', 
+                 'very high opaque', 'fractional', 'semi. thin', 'semi. mod. thick', 
+                 'semi. thick', 'semi. above low','semi. above snow']
+
+
+    cmap = plt.matplotlib.colors.ListedColormap( ct_colors )
+
     # shrink to area
     new_data = np.empty(data.shape)
     new_data[:] = np.nan
@@ -59,7 +77,7 @@ def plot_data(data, indices = None, lons = None, lats = None, hour = None):
     ax.add_feature(cartopy.feature.LAND, edgecolor='black')
     ax.add_feature(cartopy.feature.LAKES, edgecolor='black')
     ax.add_feature(cartopy.feature.RIVERS)  
-    ax.contourf(lons, lats, new_data, cmap = "jet")
+    ax.contourf(lons, lats, new_data, cmap = cmap)
     plt.show()
 
 
