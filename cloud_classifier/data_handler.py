@@ -34,8 +34,10 @@ class data_handler(base_class.base_class):
         self.samples = 1000
         self.hours=range(24)
         self.input_channels = ['bt062', 'bt073', 'bt087', 'bt097', 'bt108', 'bt120', 'bt134']
+        self.cloudtype_channel = 'CT'
         self.nwcsaf_in_version = 'auto' # other values: 'v2013' , 'v2018'
         self.nwcsaf_out_version = 'v2018' # other values: 'v2013'
+        self.verbose = False
 
         if (reset_data):
             self.masked_indices = None
@@ -73,6 +75,25 @@ class data_handler(base_class.base_class):
 
 
 
+    # TODO what are we doing here?
+    def add_training_files_from_folder(self, folder, satdata_naming = "msevi-.{13}\.nc", 
+                                        label_naming = "nwcsaf_msevi-.{13}\.nc", n = None):
+        """
+        Adds all training sets from a specified folder
+        
+        Parameters
+        ----------
+        folder : string
+            Path to the folder containig the data
+        satdata_naming : string
+            Regex of pattern 
+        label_naming : string
+        n : int
+            (Optional) If specifies only the first n pairs of data files will be used.    
+        """
+
+        pass
+
     def add_training_files(self, filename_data, filename_labels):
         """
         Takes filenames of satelite data and according labels and adds it to the data_handler.
@@ -93,7 +114,7 @@ class data_handler(base_class.base_class):
 
 
 
-    def create_training_set(self, training_sets = None):
+    def create_training_set(self, training_sets = None, masked_indices = None):
         """
         Creates a set of training vectors from NETCDF datasets.
 
@@ -106,6 +127,7 @@ class data_handler(base_class.base_class):
         training_sets (Optional) : list of string tuples
             List of tuples containing the filenames for training data and corresponding labels
             Is requiered if no training sets have been added to the data_handler object
+        masked_indices (Optional) : numpy array
 
         Returns
         -------
@@ -119,9 +141,12 @@ class data_handler(base_class.base_class):
             print("No training data added.")
             return
 
+        if (masked_indices is None):
+            masked_indices = self.masked_indices
         # Get vectors from all added training sets
-        vectors, labels = ex.sample_training_sets(training_sets, self.samples, self.hours, self.masked_indices, 
-                                                self.input_channels)
+        vectors, labels = ex.sample_training_sets(training_sets, self.samples, self.hours, masked_indices, 
+                                                self.input_channels, self.cloudtype_channel, 
+                                                verbose = self.verbose)
 
         # Remove nan values
         vectors, labels = ex.clean_training_set(vectors, labels)
@@ -158,16 +183,16 @@ class data_handler(base_class.base_class):
             String naming the used version or None if version couldnt be determined
         """
         r = ex.check_nwcsaf_version(labels)
-        if (r is None):
-            print("Could not determine ncwsaf version of the labels")
-        else:
-            if (r == "v2018"):
-                print("The cloud type data is coded after the new (2016) standard")
-            if (r == "v2013"):
-                print("The cloud type data is coded after the old (2013) standard")
-            if (set_value):
-                print("nwcsaf-in-version set accordingly")
-                self.nwcsaf_in_version = r
+        if(r is not None and set_value):
+            self.nwcsaf_in_version = r
+        if(self.verbose):
+            if (r is None):
+                print("Could not determine ncwsaf version of the labels")
+            else:
+                if (r == "v2018"):
+                    print("The cloud type data is coded after the new (2018) standard")
+                if (r == "v2013"):
+                    print("The cloud type data is coded after the old (2013) standard")
         return r
 
 
@@ -239,7 +264,7 @@ class data_handler(base_class.base_class):
             else:
                 print("No mask indices given, using complete data set")
 
-        labels = ex.extract_labels(filename, indices, hour)
+        labels = ex.extract_labels(filename, indices, hour, self.cloudtype_channel)
 
         if (self.nwcsaf_in_version == 'auto'):
             self.check_nwcsaf_version(labels, True)
@@ -345,7 +370,7 @@ class data_handler(base_class.base_class):
 
 
 
-        pl.plot_data(labels, indices = self.masked_indices, hour = hour)
+        pl.plot_data(labels, indices = self.masked_indices, hour = hour, ct_channel = self.cloudtype_channel)
 
 
 

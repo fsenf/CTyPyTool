@@ -5,7 +5,7 @@ import numpy as np
 import shapely
 import xarray as xr
 
-def plot_data(data, indices = None, hour = None):
+def plot_data(data, indices = None, hour = None, ct_channel = "CT"):
     '''
     Plots labels from an xarray onto a worldmap    
     
@@ -27,13 +27,17 @@ def plot_data(data, indices = None, hour = None):
         lons = data.coords['lon']
         lats = data.coords['lat']
     except Exception:
-        print("Longitude/Lattide variables not found!")
-        return
+        try:
+            lons = data.coords['x']
+            lats = data.coords['y']
+        except Exception:
+            print("Longitude/Lattide variables not found!")
+            return
 
     if (hour is None):
-        data = data["CT"]
+        data = data[ct_channel]
     else:
-        data = data["CT"][hour]
+        data = data[ct_channel][hour]
 
 
 

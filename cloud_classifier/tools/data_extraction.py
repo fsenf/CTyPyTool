@@ -8,7 +8,7 @@ Adds helper-methods for extracting machine learining data from NETCDF datasets
 """
 
 
-def sample_training_sets(training_sets, n, hours, indices, input_channels):
+def sample_training_sets(training_sets, n, hours, indices, input_channels,  ct_channel = "CT", verbose = False):
     """
     Creates a sample of training vectors from NETCDF datasets
 
@@ -21,7 +21,11 @@ def sample_training_sets(training_sets, n, hours, indices, input_channels):
     training_labels = np.array([])
 
     # sample all added sets
+    i = 0
     for t_set in training_sets:
+        if(verbose):
+            i+=1
+            print("Sampling dataset " + str(i) + "/" + str(len(training_sets)) )
         #read data
         sat_data = xr.open_dataset(t_set[0])
         # check if indices have benn selected
@@ -44,7 +48,9 @@ def sample_training_sets(training_sets, n, hours, indices, input_channels):
                 vectors = v
             else:
                 vectors = np.append(vectors, v, axis = 0)
-            labels = np.append(labels, extract_labels(t_set[1], selection, h), axis = 0)
+            labels = np.append(labels, 
+                extract_labels(t_set[1], selection, h, ct_channel = ct_channel), 
+                axis = 0)
 
 
         if (training_vectors is None):
@@ -119,7 +125,7 @@ def create_difference_vectors(data, keep_original_values = False):
 
 
 
-def extract_labels(filename, indices, hour = 0):
+def extract_labels(filename, indices, hour = 0, ct_channel = "CT"):
     """
     Extract labels from xarray at given indices and time
 
@@ -127,8 +133,8 @@ def extract_labels(filename, indices, hour = 0):
     """
     label_data = xr.open_dataset(filename)
     if (indices is None):
-         indices = np.where(~np.isnan(label_data["CT"][hour]))
-    return np.array(label_data["CT"])[hour,indices[0], indices[1]].flatten()
+         indices = np.where(~np.isnan(label_data[ct_channel][hour]))
+    return np.array(label_data[ct_channel])[hour,indices[0], indices[1]].flatten()
 
 
 def clean_test_vectors(vectors, indices):

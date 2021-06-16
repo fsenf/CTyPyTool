@@ -15,5 +15,5 @@ class base_class:
     def set_parameters(self, **kwargs):
         # set only valid parameters
         self.__dict__.update((k, v) for k, v in kwargs.items() if k in self.class_variables)
-  
+
 
