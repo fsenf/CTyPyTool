@@ -7,12 +7,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import SelectKBest, chi2
 
-import tools.training as dh
 import tools.plotting as pl
 import base_class
 
 import importlib
-importlib.reload(dh)
 importlib.reload(pl)
 importlib.reload(base_class)
 
@@ -33,8 +31,15 @@ class cloud_trainer(base_class.base_class):
 
 
     def __init__(self, **kwargs):
-        self.set_default_parameters(reset_data = True)
-        super().__init__(self.__dict__, **kwargs)
+        #self.set_default_parameters(reset_data = True)
+        class_variables = ['classifer_type', 
+                            'max_depth',
+                            'max_depth',
+                            'ccp_alpha',
+                            'n_estimators',
+                            'feature_preselection'
+                         ]
+        super().__init__(class_variables, **kwargs)
    
 
 
@@ -49,8 +54,6 @@ class cloud_trainer(base_class.base_class):
 
         if (reset_data):
             self.pred_labels = None
-            self.pred_indices = None
-            self.pred_filename = None
             self.cl = None
             self.feat_select = None
 
@@ -105,23 +108,7 @@ class cloud_trainer(base_class.base_class):
         if(self.feature_preselection and not (self.feat_select is None)):
             vectors = self.apply_feature_selection(vectors)
 
-        self.pred_labels =  self.cl.predict(vectors)
-        return self.pred_labels
-
-
-
-
-
-    def plot_labels(self):
-        """
-        Plots predicted labels
-        """
-        if (self.pred_labels is None or self.pred_filename is None
-                or self.pred_indices is None):
-            print("Unsufficant data for plotting labels")
-            return
-        data = dh.imbed_data(self.pred_labels, self.pred_indices, self.pred_filename)
-        pl.plot_data(data)
+        return self.cl.predict(vectors)
 
 
 

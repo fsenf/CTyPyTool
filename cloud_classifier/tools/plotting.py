@@ -5,7 +5,7 @@ import numpy as np
 import shapely
 import xarray as xr
 
-def plot_data(data, indices = None, hour = None, ct_channel = "CT"):
+def plot_data(data, indices = None, lats = None, lons = None, hour = None, ct_channel = "CT"):
     '''
     Plots labels from an xarray onto a worldmap    
     
@@ -22,17 +22,22 @@ def plot_data(data, indices = None, hour = None, ct_channel = "CT"):
         2D-array of the lattidude values for each datapoint
     
     '''
-    shapely.speedups.disable()
-    try:
-        lons = data.coords['lon']
-        lats = data.coords['lat']
-    except Exception:
+
+    if (lons is None or lats is None):
+        shapely.speedups.disable()
+        try:
+            lons = data.coords['lon']
+            lats = data.coords['lat']
+        except Exception:
+            print("Longitude/Lattide variables not found!")
+            return
+        """
         try:
             lons = data.coords['x']
             lats = data.coords['y']
         except Exception:
-            print("Longitude/Lattide variables not found!")
-            return
+        """
+        
 
     if (hour is None):
         data = data[ct_channel]
@@ -81,8 +86,15 @@ def plot_data(data, indices = None, hour = None, ct_channel = "CT"):
     ax.add_feature(cartopy.feature.LAND, edgecolor='black')
     ax.add_feature(cartopy.feature.LAKES, edgecolor='black')
     ax.add_feature(cartopy.feature.RIVERS)  
+    print("shapes are: ")
+    print(lons.shape)
+    print(lats.shape)
+    print(new_data.shape)
     ax.contourf(lons, lats, new_data, cmap = cmap)
+
     plt.show()
+
+
 
 
 # def addSubplot(data, variable = None, lons = None, lats = None, time = 0, index = 0, size_x = 1, size_y = 1):

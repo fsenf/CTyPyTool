@@ -165,6 +165,9 @@ def make_xarray(labels, indices, reference_filename, labelkey = "CT"):
 
     return new_data.to_dataset()
  
+def get_georef(filename):
+
+    pass
 
 
 def write_NETCDF(data, filename):
