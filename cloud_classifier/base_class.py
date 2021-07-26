@@ -13,10 +13,10 @@ class base_class:
         dirname = os.path.dirname(__file__)
         self.default_path = os.path.join(dirname, "defaults")
 
-        self.settings_folder = "settings"
-        self.config_file = os.path.join(self.settings_folder,"config.json")
-        self.data_file = os.path.join(self.settings_folder,"training_data.json")
-        self.data_structure = os.path.join(self.settings_folder,"data_structure.json")
+        self.__settings_folder = "settings"
+        self.__config_file = os.path.join(self.__settings_folder,"config.json")
+        self.__data_file = os.path.join(self.__settings_folder,"training_data.json")
+        self.__structure_file = os.path.join(self.__settings_folder,"data_structure.json")
 
         self.project_path = project_path
         self.class_variables = class_variables
@@ -55,7 +55,6 @@ class base_class:
             Path to the directory where the project will be stored. If none is given, 
             current directory will be used.
         """
-        
         try:
             os.mkdir(folder)
         except Exception:
@@ -63,8 +62,8 @@ class base_class:
             return 0
 
         self.set_project_path(folder)
-        default_settings = os.path.join(self.default_path, self.settings_folder)
-        project_settings = os.path.join(self.project_path, self.settings_folder)
+        default_settings = os.path.join(self.default_path, self.__settings_folder)
+        project_settings = os.path.join(self.project_path, self.__settings_folder)
 
         try:
             shutil.copytree(default_settings, project_settings)
@@ -141,11 +140,11 @@ class base_class:
         """
         file = None
         if (type == "config"):
-            file = self.config_file
+            file = self.__config_file
         elif (type == "training_data"):
-            file = self.data_file
+            file = self.__data_file
         elif (type == "data_structure"):
-            file = self.data_structure
+            file = self.__structure_file
         else:
             print("No valid parameter type given")
         return file
