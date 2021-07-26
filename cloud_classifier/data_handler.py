@@ -34,12 +34,12 @@ class data_handler(base_class.base_class):
                             'cloudtype_channel',
                             'nwcsaf_in_version',
                             'nwcsaf_out_version',
-                            'verbose'
+                            'verbose',
+                            'training_sets',
+                            'mask'
                          ]
         super().__init__(class_parameters, **kwargs)
         self.masked_indices = None
-        self.training_sets = None
-        self.mask_file = None
         self.latest_test_file = None
 
 
@@ -61,7 +61,7 @@ class data_handler(base_class.base_class):
         m = xr.DataArray([row for row in mask_data[selected_mask]], name = selected_mask)
         self.masked_indices = np.where(m)
 
-        self.mask_file = [filename, selected_mask]
+        self.mask = [filename, selected_mask]
         return self.masked_indices
 
 
@@ -314,7 +314,7 @@ class data_handler(base_class.base_class):
 
 
 
-    def save_data_files(self, path):
+    def save_data_files(self):
         pass
 
 

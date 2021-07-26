@@ -1,0 +1,19 @@
+{   
+    "data_source_folder" : null,
+    "timestamp_length" : 13,
+    "sat_file_structure" : "msevi-medi-TIMESTAMP.nc",
+    "label_file_structure" : "nwcsaf_msevi-medi-TIMESTAMP.nc",
+
+    "input_channels": [
+        "bt062",
+        "bt073",
+        "bt087",
+        "bt097",
+        "bt108",
+        "bt120",
+        "bt134"
+    ],
+    "cloudtype_channel": "CT",
+    "nwcsaf_in_version": "auto",
+    "nwcsaf_out_version": "v2018"
+}
