@@ -1,8 +1,11 @@
 import numpy as np
 import xarray as xr
 import random
-import h5py 
+import h5py
+import re
+import os
 from joblib import dump, load
+
 
 import tools.data_extraction as ex
 import tools.plotting as pl
@@ -26,7 +29,12 @@ class data_handler(base_class.base_class):
     def __init__(self, **kwargs):
 
         #self.set_default_parameters(reset_data = True)
-        class_parameters = ['difference_vectors', 
+        class_parameters = [
+                            "data_source_folder", 
+                            "timestamp_length",
+                            "sat_file_structure",
+                            "label_file_structure",
+                            'difference_vectors', 
                             'original_values', 
                             'samples', 
                             'hours', 
@@ -42,6 +50,60 @@ class data_handler(base_class.base_class):
         self.masked_indices = None
         self.latest_test_file = None
 
+
+
+
+    def generate_filelist_from_folder(self, folder = None, additive = True):
+        """
+        Extracts trainig files from folder
+        Reads all matching files of satellite and label data from folder and adds them to project
+
+        Parameters
+        ----------
+        folder : string (Optional)
+            Path to the folder containig the data files. If none is given path will be read from settings
+        additive : bool
+            If True, files will be read additive, if False old filelists will be overwritten.
+        """
+
+        if (folder is None):
+            folder = self.data_source_folder
+        if (folder is None):
+            print("No folder specified!")
+            return
+
+        self.data_source_folder = folder
+
+        if ("TIMESTAMP" not in self.sat_file_structure or 
+            "TIMESTAMP" not in self.label_file_structure):
+            print ("Specified file name must contain region marked as 'TIMESTAMP'")
+            return
+
+        if (not additive):
+            self.training_sets = 0
+
+        pattern = "(.{" + str(self.timestamp_length) + "})"
+
+        sat_pattern = self.sat_file_structure.replace("TIMESTAMP", pattern)
+        lab_pattern = self.label_file_structure.replace("TIMESTAMP", pattern)
+
+        sat_comp = re.compile(sat_pattern)
+        lab_comp = re.compile(lab_pattern)
+        sat_files, lab_files = {}, {}
+
+        files = os.listdir(folder)
+        for file in files:
+            sat_id = sat_comp.match(file)
+            lab_id = lab_comp.match(file)
+            
+            if (sat_id):
+                sat_files[sat_id.group(1)] = folder  + file  
+            elif (lab_id):
+                lab_files[lab_id.group(1)] = folder  + file
+
+        for key in sat_files.keys():
+            if(key in lab_files):
+                self.add_training_files(sat_files[key], lab_files[key])
 
 
 
@@ -65,25 +127,6 @@ class data_handler(base_class.base_class):
         return self.masked_indices
 
 
-
-    # TODO what are we doing here?
-    def add_training_files_from_folder(self, folder, satdata_naming = "msevi-.{13}\.nc", 
-                                        label_naming = "nwcsaf_msevi-.{13}\.nc", n = None):
-        """
-        Adds all training sets from a specified folder
-        
-        Parameters
-        ----------
-        folder : string
-            Path to the folder containig the data
-        satdata_naming : string
-            Regex of pattern 
-        label_naming : string
-        n : int
-            (Optional) If specifies only the first n pairs of data files will be used.    
-        """
-
-        pass
 
     def add_training_files(self, filename_data, filename_labels):
         """

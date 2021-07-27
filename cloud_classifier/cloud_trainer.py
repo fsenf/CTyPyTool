@@ -32,7 +32,7 @@ class cloud_trainer(base_class.base_class):
 
     def __init__(self, **kwargs):
         #self.set_default_parameters(reset_data = True)
-        class_variables = ['classifer_type', 
+        class_variables = ['classifier_type', 
                             'max_depth',
                             'max_depth',
                             'ccp_alpha',
