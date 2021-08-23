@@ -3,33 +3,36 @@ import os
 import numpy as np
 import shutil
 
+
 import cloud_trainer as ct
 import data_handler as dh
-import base_class
+import base_class as bc
 
 import importlib
-
 importlib.reload(ct)
 importlib.reload(dh)
-importlib.reload(base_class)
+importlib.reload(bc)
+
+from cloud_trainer import cloud_trainer
+from data_handler import data_handler
+from base_class import base_class
 
 
-
-class cloud_classifier(base_class.base_class):
+class cloud_classifier(cloud_trainer, data_handler):
     """
     
-    bla PIPELIN
+    bla PIPELINE
 
     """
 
-
     def __init__ (self, **kwargs):
-        self.data_handler = dh.data_handler( **kwargs)
-        self.cloud_trainer = ct.cloud_trainer( **kwargs)
-
+        #self.data_handler = dh.data_handler( **kwargs)
+        #self.cloud_trainer = ct.cloud_trainer( **kwargs)
         #class_variables = self.data_handler.get_class_variables()
         #class_variables += self.cloud_trainer.get_class_variables()
-        super().__init__( **kwargs)
+
+
+        super().__init__(**kwargs)
 
 
 
@@ -54,15 +57,6 @@ class cloud_classifier(base_class.base_class):
 
         folder = os.path.join(path, name)
         
-        # try:
-        #     os.mkdir(folder)
-        # except Exception:
-        #     print("Could not create classifier project at given location")
-        #     return 0
-
-        # default_settings = os.path.join(self.default_path, self.settings_folder)
-        # project_settings = os.path.join(self.project_path, self.settings_folder)
-
         try:
             shutil.copytree(self.default_path, folder)
 
@@ -71,7 +65,6 @@ class cloud_classifier(base_class.base_class):
             return 0
 
         self.set_project_path(folder)
-
 
     def load_project(self, path):
         """
@@ -91,14 +84,19 @@ class cloud_classifier(base_class.base_class):
         self.cloud_trainer.save_all(self.project_path)
 
 
-
     def set_parameters(self, **kwargs):
-        self.data_handler.set_parameters(**kwargs)
-        self.cloud_trainer.set_parameters(**kwargs)
+        #self.data_handler.set_parameters(**kwargs)
+        #self.cloud_trainer.set_parameters(**kwargs)
         super().set_parameters(**kwargs)
-
     
     def set_project_path(self, path):
         self.project_path = path
 
 
+
+    def unnamed(self):
+        """
+
+        """
+
+        ####### generate training data

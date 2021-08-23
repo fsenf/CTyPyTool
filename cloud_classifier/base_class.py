@@ -7,7 +7,7 @@ class base_class:
     """
 
 
-    def __init__(self, class_variables = [], **kwargs):
+    def __init__(self, **kwargs):
 
         dirname = os.path.dirname(__file__)
         self.default_path = os.path.join(dirname, "defaults")
@@ -15,14 +15,23 @@ class base_class:
         self.__data_file = os.path.join("settings","training_data.json")
         self.__structure_file = os.path.join("settings","data_structure.json")
 
-        self.class_variables = class_variables
+        if(not hasattr(self, 'class_variables')):
+            print("Could not initalize class variables")
+            return
 
         # init all class parameterst
-        self.__dict__.update((k,None) for k in class_variables)
+        self.__dict__.update((k,None) for k in self.class_variables)
         self.load_all(self.default_path)
         # update with given parameters
         self.set_parameters(**kwargs)
 
+
+
+    def init_class_variables(self, class_variables):
+        if (not hasattr(self, 'class_variables')):
+            self.class_variables = []
+
+        self.class_variables = set(self.class_variables).union(set(class_variables))
 
 
     def set_parameters(self, **kwargs):
@@ -72,7 +81,7 @@ class base_class:
             self.save_parameters(path, type = t)
 
     def get_class_variables(self):
-        return self.class_variables
+        return list(self.class_variables)
 
 
     def __parse_parameter_type(self, type):

@@ -10,15 +10,17 @@ from joblib import dump, load
 import tools.data_extraction as ex
 import tools.plotting as pl
 import base_class
-
-
-
+#
 import importlib
 importlib.reload(ex)
-importlib.reload(base_class)
 importlib.reload(pl)
 
-class data_handler(base_class.base_class):
+from base_class import base_class
+from cloud_trainer import cloud_trainer
+   
+
+
+class data_handler(base_class):
 
     """
     Class that faciltates data extraction and processing for the use in machine learning from NETCDF-satelite data.
@@ -29,24 +31,26 @@ class data_handler(base_class.base_class):
     def __init__(self, **kwargs):
 
         #self.set_default_parameters(reset_data = True)
-        class_parameters = [
-                            "data_source_folder", 
-                            "timestamp_length",
-                            "sat_file_structure",
-                            "label_file_structure",
-                            'difference_vectors', 
-                            'original_values', 
-                            'samples', 
-                            'hours', 
-                            'input_channels',
-                            'cloudtype_channel',
-                            'nwcsaf_in_version',
-                            'nwcsaf_out_version',
-                            'verbose',
-                            'training_sets',
-                            'mask'
-                         ]
-        super().__init__(class_parameters, **kwargs)
+        class_variables = [
+            "data_source_folder", 
+            "timestamp_length",
+            "sat_file_structure",
+            "label_file_structure",
+            'difference_vectors', 
+            'original_values', 
+            'samples', 
+            'hours', 
+            'input_channels',
+            'cloudtype_channel',
+            'nwcsaf_in_version',
+            'nwcsaf_out_version',
+            'verbose',
+            'training_sets',
+            'mask'
+            ]
+
+        super().init_class_variables(class_variables)
+        super().__init__( **kwargs)
         self.masked_indices = None
         self.latest_test_file = None
 

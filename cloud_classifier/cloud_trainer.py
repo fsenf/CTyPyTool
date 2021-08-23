@@ -9,16 +9,13 @@ from sklearn.feature_selection import SelectKBest, chi2
 
 import tools.plotting as pl
 import base_class
-
 import importlib
 importlib.reload(pl)
-importlib.reload(base_class)
 
+from base_class import base_class
+#from data_handler import data_handler
 
-
-
-
-class cloud_trainer(base_class.base_class):
+class cloud_trainer(base_class):
     """
     Trainable Classifier for cloud classifer_type prediction from satelite data.
 
@@ -31,15 +28,18 @@ class cloud_trainer(base_class.base_class):
 
 
     def __init__(self, **kwargs):
-        #self.set_default_parameters(reset_data = True)
-        class_variables = ['classifier_type', 
-                            'max_depth',
-                            'max_depth',
-                            'ccp_alpha',
-                            'n_estimators',
-                            'feature_preselection'
-                         ]
-        super().__init__(class_variables, **kwargs)
+        class_variables =  {
+            'classifier_type', 
+            'max_depth',
+            'max_depth',
+            'ccp_alpha',
+            'n_estimators',
+            'feature_preselection'
+            }
+                  
+
+        super().init_class_variables(class_variables)
+        super().__init__( **kwargs)
    
 
 
