@@ -26,16 +26,13 @@ class cloud_classifier(cloud_trainer, data_handler):
     """
 
     def __init__ (self, **kwargs):
-        #self.data_handler = dh.data_handler( **kwargs)
-        #self.cloud_trainer = ct.cloud_trainer( **kwargs)
-        #class_variables = self.data_handler.get_class_variables()
-        #class_variables += self.cloud_trainer.get_class_variables()
-
-
         super().__init__(**kwargs)
 
 
 
+
+    ############# CREATING, LOADING AND SAVING PROJECTS ######################
+    ##########################################################################
 
     def create_new_project(self, name, path = None):
         """
@@ -73,30 +70,55 @@ class cloud_classifier(cloud_trainer, data_handler):
         Parameters
         ----------
         path : string 
-            Path to the directory where the clasifier is stored.
+            Path to the stored project
         """  
         self.set_project_path(path)
-        self.data_handler.load_all(self.project_path)
-        self.cloud_trainer.load_all(self.project_path)
+        self.load_all(self.project_path)
 
     def save_project(self):
-        self.data_handler.save_all(self.project_path)
-        self.cloud_trainer.save_all(self.project_path)
-
-
-    def set_parameters(self, **kwargs):
-        #self.data_handler.set_parameters(**kwargs)
-        #self.cloud_trainer.set_parameters(**kwargs)
-        super().set_parameters(**kwargs)
+        self.save_all(self.project_path)
     
     def set_project_path(self, path):
         self.project_path = path
 
 
 
-    def unnamed(self):
-        """
 
-        """
 
-        ####### generate training data
+    #############           Function Overwrites         ######################
+    ##########################################################################
+
+
+
+    def generate_filelist_from_folder(self, folder = None, additive = False, verbose = False):
+        super().generate_filelist_from_folder(additive = False)
+        self.save_parameters(path = self.project_path, type = "training_data")
+        if (verbose):
+            print("Filelist created!")
+
+
+    def set_indices_from_mask(self, verbose = False):
+        super().set_indices_from_mask(self.mask_file, self.mask_key)
+        if (verbose):
+            print("Masked indices created!")
+
+
+    def create_training_set(self, verbose = False):
+        v,l = super().create_training_set()
+        filename = os.path.join(self.project_path, "data", "training_data")
+        self.save_training_set(v,l, filename)
+        if (verbose):
+            print("Training data created!")
+
+
+
+
+
+
+    def train_classifier(self, verbose = True):
+        """
+        
+        """
+        self.generate_filelist_from_folder(additive = False, verbose = verbose)
+        self.set_indices_from_mask(verbose = verbose)
+        self.create_training_set(verbose = verbose)

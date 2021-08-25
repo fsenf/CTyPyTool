@@ -1,8 +1,11 @@
 {   
-    "data_source_folders" : [],
+    "data_source_folder" : "../data/training_data",
     "timestamp_length" : 13,
     "sat_file_structure" : "msevi-medi-TIMESTAMP.nc",
     "label_file_structure" : "nwcsaf_msevi-medi-TIMESTAMP.nc",
+    
+    "mask_file" : "../data/cloud-typing-data/lsm_mask_medi.nc",
+    "mask_key" : "land_sea_mask",
 
     "input_channels": [
         "bt062",
@@ -13,34 +16,11 @@
         "bt120",
         "bt134"
     ],
-    "cloudtype_channel": "CT",
+    "cloudtype_channel": "ct",
     "nwcsaf_in_version": "auto",
     "nwcsaf_out_version": "v2018",
     "hours": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23
+        0
     ],
     "difference_vectors": true,
     "original_values": true,

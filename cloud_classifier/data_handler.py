@@ -46,7 +46,8 @@ class data_handler(base_class):
             'nwcsaf_out_version',
             'verbose',
             'training_sets',
-            'mask'
+            'mask_file',
+            'mask_key'
             ]
 
         super().init_class_variables(class_variables)
@@ -57,7 +58,7 @@ class data_handler(base_class):
 
 
 
-    def generate_filelist_from_folder(self, folder = None, additive = True):
+    def generate_filelist_from_folder(self, folder = None, additive = False):
         """
         Extracts trainig files from folder
         Reads all matching files of satellite and label data from folder and adds them to project
@@ -84,7 +85,7 @@ class data_handler(base_class):
             return
 
         if (not additive):
-            self.training_sets = 0
+            self.training_sets = None
 
         pattern = "(.{" + str(self.timestamp_length) + "})"
 
@@ -101,9 +102,9 @@ class data_handler(base_class):
             lab_id = lab_comp.match(file)
             
             if (sat_id):
-                sat_files[sat_id.group(1)] = folder  + file  
+                sat_files[sat_id.group(1)] = os.path.join(folder, file)
             elif (lab_id):
-                lab_files[lab_id.group(1)] = folder  + file
+                lab_files[lab_id.group(1)] = os.path.join(folder, file)
 
         for key in sat_files.keys():
             if(key in lab_files):
@@ -361,8 +362,17 @@ class data_handler(base_class):
 
 
 
-    def save_data_files(self):
-        pass
+    def save_filelist(self, filename):
+        """
+
+        """
+        dump(self.training_sets, filename)
+
+
+    def save_mask_indices(self, filename):
+        dump(self.masked_indices, filename)
+
+
 
 
     def save_training_set(self, vectors, labels, filename):
