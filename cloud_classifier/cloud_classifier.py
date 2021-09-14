@@ -29,11 +29,15 @@ class cloud_classifier(cloud_trainer, data_handler):
 
     def __init__ (self, **kwargs):
         class_variables =  {
-            "input_source_folder"
+            "input_source_folder",
+            "input_files"
             }
+
         super().init_class_variables(class_variables)
         super().__init__(**kwargs)
 
+        self.input_vectors = None
+        self.labels = None
 
 
 
@@ -94,7 +98,7 @@ class cloud_classifier(cloud_trainer, data_handler):
 
 
 
-    #############           Function Overwrites         ######################
+    #############           Steps of the pipeline         ######################
     ##########################################################################
 
 
@@ -109,8 +113,9 @@ class cloud_classifier(cloud_trainer, data_handler):
 
     def set_indices_from_mask(self, verbose = True):
         super().set_indices_from_mask(self.mask_file, self.mask_key)
+        filename = os.path.join(self.project_path, "data", "masked_indices")
         if (verbose):
-            print("Masked indices created!")
+            print("Masked indices set!")
 
 
     def create_training_set(self, verbose = True):
@@ -129,7 +134,44 @@ class cloud_classifier(cloud_trainer, data_handler):
             print("Classifier created!")
 
 
+
+
+
+    def extract_input_filelist(self, verbose = True):
+        self.input_files =  self.generate_filelist_from_folder(folder = self.input_source_folder, no_labels = True)
+        filepath = os.path.join(self.project_path, "settings", "input_files.json")
+        self.save_parameters(filepath)
+        if (verbose):
+            print("Input filelist created!")
+
+
+    def load_classifier(self, reload = False, verbose = True):
+        if(self.classifier is None or reload):
+            filename = os.path.join(self.project_path, "data", "classifier")
+            super().load_classifier(filename)
+            filename = os.path.join(self.project_path, "data", "masked_indices")
+            if(verbose):
+                print("Classifier loaded!")
+
+
+    def create_input_vectors(self, verbose = True):
+        self.input_vectors = []
+        for file in self.input_files:
+            vectors = super().create_test_vectors(file)
+            self.input_vectors.append(vectors)
+        if(verbose):
+                print("Input vectors created!")
+
+    def predict_labels(self, verbose = True):
+        self.labels = []
+        for vectors in self.input_vectors:
+            labels = super().predict_labels(vectors)
+            self.labels.append(labels)
+        if(verbose):
+            print("Predicted Labels!")
+
     ##########################################################################
+
     def run_training_pipeline(self, verbose = True):
         """
         
@@ -137,20 +179,24 @@ class cloud_classifier(cloud_trainer, data_handler):
         self.extract_training_filelist(verbose = verbose)
         self.set_indices_from_mask(verbose = verbose)
         v,l = self.create_training_set(verbose = verbose)
-        self.train_classifier(v,l)
+        self.train_classifier(v,l, verbose = verbose)
 
 
-    def run_prediction_pipeline(self, verbose = True, reload_all = True):
-        if(self.classifier is None or reload_all):
-            filename = os.path.join(self.project_path, "data", "classifier")
-            self.load_classifier(filename)
-            if (verbose):
-                "Classifier loaded"
+    def run_prediction_pipeline(self, verbose = True):
+
+        self.extract_input_filelist(verbose = verbose)
+        self.load_classifier(reload = False, verbose = verbose)
+        self.set_indices_from_mask(verbose = verbose)
+        self.create_input_vectors(verbose = verbose)
+        #TODO: EROOR: self.predict_labels(verbose = verbose)
+        #TODO: convert and save labels
 
 
 
 
 
+
+    ##########################################################################
 
 
     def generate_filelist_from_folder(self, folder = None, no_labels = False):
@@ -168,8 +214,6 @@ class cloud_classifier(cloud_trainer, data_handler):
             Default is False. If True, filelist will contain sat data and labels, if False only sat_data files.
         """
 
-        if (folder is None):
-            folder = self.data_source_folder
         if (folder is None):
             print("No folder specified!")
             return

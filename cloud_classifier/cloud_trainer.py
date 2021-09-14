@@ -36,7 +36,8 @@ class cloud_trainer(base_class):
             'n_estimators',
             'feature_preselection'
             }
-                  
+        
+        self.classifier = None      
 
         super().init_class_variables(class_variables)
         super().__init__( **kwargs)
@@ -54,7 +55,7 @@ class cloud_trainer(base_class):
 
     #     if (reset_data):
     #         self.pred_labels = None
-    #         self.cl = None
+    #         self.classifier = None
     #         self.feat_select = None
 
 
@@ -82,9 +83,9 @@ class cloud_trainer(base_class):
         """
 
         if(self.classifier_type == "Tree"):
-            self.cl = tree.DecisionTreeClassifier(max_depth = self.max_depth, ccp_alpha = self.ccp_alpha)
+            self.classifier = tree.DecisionTreeClassifier(max_depth = self.max_depth, ccp_alpha = self.ccp_alpha)
         elif(self.classifier_type == "Forest"): 
-            self.cl = RandomForestClassifier(n_estimators = self.n_estimators, max_depth = self.max_depth, 
+            self.classifier = RandomForestClassifier(n_estimators = self.n_estimators, max_depth = self.max_depth, 
                                                 ccp_alpha = self.ccp_alpha)
 
         if(training_vectors is None or training_labels is None):
@@ -93,7 +94,7 @@ class cloud_trainer(base_class):
 
         if(self.feature_preselection and not (self.feat_select is None)):
             training_vectors = self.apply_feature_selection(training_vectors)
-        self.cl.fit(training_vectors, training_labels)
+        self.classifier.fit(training_vectors, training_labels)
 
 
 
@@ -101,14 +102,14 @@ class cloud_trainer(base_class):
         """
         Predicts the labels if a corresponding set of input vectors has been created.
         """
-        if(self.cl is None):
+        if(self.classifier is None):
             print("No classifer trained or loaded")
             return
 
         if(self.feature_preselection and not (self.feat_select is None)):
             vectors = self.apply_feature_selection(vectors)
 
-        return self.cl.predict(vectors)
+        return self.classifier.predict(vectors)
 
 
 
@@ -121,7 +122,7 @@ class cloud_trainer(base_class):
         """
 
         # save a possible already trained classifier
-        tmp = self.cl
+        tmp = self.classifier
         train_v, test_v, train_l, test_l = train_test_split(vectors, labels, random_state=0)
 
         self.train_classifier(train_v, train_l)
@@ -131,7 +132,7 @@ class cloud_trainer(base_class):
         correct = np.sum(pred_l == test_l)
         total = len(pred_l)
         #restore classifier
-        self.cl = tmp
+        self.classifier = tmp
         if(verbose):
             print("Correctly identified %i out of %i labels! \nPositve rate is: %f" % (correct, total, correct/total))
         return(correct/total)
@@ -153,7 +154,7 @@ class cloud_trainer(base_class):
         hour : int
             0-23, hour of the day at which the data sets are read
         """
-        if(self.cl is None):
+        if(self.classifier is None):
             print("No classifer trained or loaded")
             return
         predicted_labels = self.predict_labels(vectors)
@@ -184,7 +185,7 @@ class cloud_trainer(base_class):
         filename : string
             Name of the file into which the classifier is saved.
         """
-        dump(self.cl, filename)
+        dump(self.classifier, filename)
 
 
     def load_classifier(self, filename):
@@ -195,4 +196,4 @@ class cloud_trainer(base_class):
         filename : string
             Name if the file the classifier is loaded from.
         """
-        self.cl = load(filename)
+        self.classifier = load(filename)
