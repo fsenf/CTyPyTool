@@ -63,6 +63,7 @@ class cloud_classifier(cloud_trainer, data_handler):
 
         self.set_project_path(folder)
 
+
     def load_project(self, path):
         """
         Loads a persistant classifier project.
@@ -90,35 +91,50 @@ class cloud_classifier(cloud_trainer, data_handler):
 
 
 
-    def generate_filelist_from_folder(self, folder = None, additive = False, verbose = False):
-        super().generate_filelist_from_folder(additive = False)
+    def generate_filelist_from_folder(self, folder = None, additive = False, verbose = True):
+        super().generate_filelist_from_folder(folder = folder, additive = False)
         self.save_parameters(path = self.project_path, type = "training_data")
         if (verbose):
             print("Filelist created!")
 
 
-    def set_indices_from_mask(self, verbose = False):
+    def set_indices_from_mask(self, verbose = True):
         super().set_indices_from_mask(self.mask_file, self.mask_key)
         if (verbose):
             print("Masked indices created!")
 
 
-    def create_training_set(self, verbose = False):
+    def create_training_set(self, verbose = True):
         v,l = super().create_training_set()
         filename = os.path.join(self.project_path, "data", "training_data")
         self.save_training_set(v,l, filename)
         if (verbose):
             print("Training data created!")
+        return v,l
+
+    def train_classifier(self, vectors, labels, verbose = True):
+        super().train_classifier(vectors, labels)
+        filename = os.path.join(self.project_path, "data", "classifier")
+        self.save_classifier(filename)
+        if (verbose):
+            print("Classifier created!")
 
 
-
-
-
-
-    def train_classifier(self, verbose = True):
+    ##########################################################################
+    def run_training_pipeline(self, verbose = True):
         """
         
         """
         self.generate_filelist_from_folder(additive = False, verbose = verbose)
         self.set_indices_from_mask(verbose = verbose)
-        self.create_training_set(verbose = verbose)
+        v,l = self.create_training_set(verbose = verbose)
+        self.train_classifier(v,l)
+
+
+    def run_prediction_pipeline(self, verbose = True, reload_all = True)
+        if(self.classifier is None or reload_all):
+            filename = os.path.join(self.project_path, "data", "classifier")
+            self.load_classifier(filename)
+            if (verbose):
+                "Classiifer loaded"
+            
