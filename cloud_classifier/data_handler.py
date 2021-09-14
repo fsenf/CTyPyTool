@@ -55,63 +55,6 @@ class data_handler(base_class):
         self.masked_indices = None
         self.latest_test_file = None
 
-
-
-
-    def generate_filelist_from_folder(self, folder = None, additive = False):
-        """
-        Extracts trainig files from folder
-        Reads all matching files of satellite and label data from folder and adds them to project
-
-        Parameters
-        ----------
-        folder : string (Optional)
-            Path to the folder containig the data files. If none is given path will be read from settings
-        additive : bool
-            If True, files will be read additive, if False old filelists will be overwritten.
-        """
-
-        if (folder is None):
-            folder = self.data_source_folder
-        if (folder is None):
-            print("No folder specified!")
-            return
-
-        self.data_source_folder = folder
-
-        if ("TIMESTAMP" not in self.sat_file_structure or 
-            "TIMESTAMP" not in self.label_file_structure):
-            print ("Specified file name must contain region marked as 'TIMESTAMP'")
-            return
-
-        if (not additive):
-            self.training_sets = None
-
-        pattern = "(.{" + str(self.timestamp_length) + "})"
-
-        sat_pattern = self.sat_file_structure.replace("TIMESTAMP", pattern)
-        lab_pattern = self.label_file_structure.replace("TIMESTAMP", pattern)
-
-        sat_comp = re.compile(sat_pattern)
-        lab_comp = re.compile(lab_pattern)
-        sat_files, lab_files = {}, {}
-
-        files = os.listdir(folder)
-        for file in files:
-            sat_id = sat_comp.match(file)
-            lab_id = lab_comp.match(file)
-            
-            if (sat_id):
-                sat_files[sat_id.group(1)] = os.path.join(folder, file)
-            elif (lab_id):
-                lab_files[lab_id.group(1)] = os.path.join(folder, file)
-
-        for key in sat_files.keys():
-            if(key in lab_files):
-                self.add_training_files(sat_files[key], lab_files[key])
-
-
-
     def set_indices_from_mask(self, filename, selected_mask):
         """
         Sets indices according to a selected mask

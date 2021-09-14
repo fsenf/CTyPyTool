@@ -17,7 +17,7 @@ from base_class import base_class
 
 class cloud_trainer(base_class):
     """
-    Trainable Classifier for cloud classifer_type prediction from satelite data.
+    Trainable Classifier for cloud classifier_type prediction from satelite data.
 
 
 
@@ -44,18 +44,18 @@ class cloud_trainer(base_class):
 
 
 
-    def set_default_parameters(self, reset_data = False):
-        ### paramaeters
-        self.classifer_type = "Tree"
-        self.max_depth = 20
-        self.ccp_alpha = 0
-        self.feature_preselection = False
-        self.n_estimators = 75
+    # def set_default_parameters(self, reset_data = False):
+    #     ### paramaeters
+    #     self.classifier_type = "Tree"
+    #     self.max_depth = 20
+    #     self.ccp_alpha = 0
+    #     self.feature_preselection = False
+    #     self.n_estimators = 75
 
-        if (reset_data):
-            self.pred_labels = None
-            self.cl = None
-            self.feat_select = None
+    #     if (reset_data):
+    #         self.pred_labels = None
+    #         self.cl = None
+    #         self.feat_select = None
 
 
     def fit_feature_selection(self, training_vectors, training_labels, k = 20):
@@ -81,9 +81,9 @@ class cloud_trainer(base_class):
             Maximal depth of the decision tree
         """
 
-        if(self.classifer_type == "Tree"):
+        if(self.classifier_type == "Tree"):
             self.cl = tree.DecisionTreeClassifier(max_depth = self.max_depth, ccp_alpha = self.ccp_alpha)
-        elif(self.classifer_type == "Forest"): 
+        elif(self.classifier_type == "Forest"): 
             self.cl = RandomForestClassifier(n_estimators = self.n_estimators, max_depth = self.max_depth, 
                                                 ccp_alpha = self.ccp_alpha)
 
@@ -196,24 +196,3 @@ class cloud_trainer(base_class):
             Name if the file the classifier is loaded from.
         """
         self.cl = load(filename)
-
-
-
-'''
-    def set_training_paremeters(self, classifer_type = "Tree", feature_preselection = False, max_depth = 20):
-        """
-        Sets the paramerters of the classifer.
-
-        Parameters
-        ----------
-        classifer_type : string
-            (Optional) Type of classifer that is trained
-
-        feature_preselection : bool
-            (Optional) Set to use feature preselection to only use the most salient features
-
-        """
-        self.classifer_type = classifer_type
-        self.feature_preselection = feature_preselection
-        self.max_depth = max_depth
-'''
