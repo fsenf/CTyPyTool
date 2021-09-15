@@ -257,7 +257,7 @@ class data_handler(base_class):
         return labels
 
 
-    def make_xrData(self, labels, indices, reference_filename = None, NETCDF_out = None):
+    def make_xrData(self, labels, indices, reference_file = None, NETCDF_out = None):
         """
         Transforms a set of predicted labels into xarray-dataset  
 
@@ -269,8 +269,8 @@ class data_handler(base_class):
         indices : tuple of array-like
             Indices of the given labels in respect to the coordiantes from a reference file  
 
-        reference_filename : string
-            (Optional) filename of a NETCDF file with the same scope as the label data.
+        reference_file : string
+            (Optional) NETCDF file with the same scope as the label data.
             This field is requiered if no training sets have been added to the data_handler!
         
         NETCDF_out : string
@@ -282,21 +282,21 @@ class data_handler(base_class):
             labels in the form of an xarray dataset
 
         """
-        if (reference_filename is None):
+        if (reference_file is None):
             print("No refrence file given!")
             if (not self.latest_test_file is None):
-                reference_filename = self.latest_test_file
+                reference_file = self.latest_test_file
                 print("Using latest test file as reference")
 
             elif (not self.training_sets is None):
-                reference_filename = self.training_sets[0][0]
+                reference_file = self.training_sets[0][0]
                 print("Using training data as reference!")
 
             else:
                 print("Can not make xarray without reference file")
                 return
 
-        xar = ex.make_xarray(labels, indices, reference_filename)
+        xar = ex.make_xarray(labels, indices, reference_file)
 
         if (not NETCDF_out is None):
             ex.write_NETCDF(xar, NETCDF_out)

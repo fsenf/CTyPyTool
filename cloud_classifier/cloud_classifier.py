@@ -36,9 +36,6 @@ class cloud_classifier(cloud_trainer, data_handler):
         super().init_class_variables(class_variables)
         super().__init__(**kwargs)
 
-        self.input_vectors = None
-        self.labels = None
-
 
 
 
@@ -102,7 +99,7 @@ class cloud_classifier(cloud_trainer, data_handler):
     ##########################################################################
 
 
-
+    #### training
     def extract_training_filelist(self, verbose = True):
         self.training_sets =  self.generate_filelist_from_folder(self.data_source_folder)
         filepath = os.path.join(self.project_path, "settings", "training_sets.json")
@@ -137,6 +134,8 @@ class cloud_classifier(cloud_trainer, data_handler):
 
 
 
+
+    ### predicting
     def extract_input_filelist(self, verbose = True):
         self.input_files =  self.generate_filelist_from_folder(folder = self.input_source_folder, no_labels = True)
         filepath = os.path.join(self.project_path, "settings", "input_files.json")
@@ -154,28 +153,34 @@ class cloud_classifier(cloud_trainer, data_handler):
                 print("Classifier loaded!")
 
 
-    def create_input_vectors(self, verbose = True):
-        self.input_vectors = []
-        for file in self.input_files:
-            vectors = super().create_test_vectors(file)
-            self.input_vectors.append(vectors)
+    def create_input_vectors(self, file, verbose = True):
+        vectors, indices = super().create_test_vectors(file)
         if(verbose):
                 print("Input vectors created!")
+        return vectors, indices
 
-    def predict_labels(self, verbose = True):
-        self.labels = []
-        for vectors in self.input_vectors:
-            labels = super().predict_labels(vectors)
-            self.labels.append(labels)
+
+    def predict_labels(self, input_vectors, verbose = True):
+        labels = super().predict_labels(input_vectors)
         if(verbose):
             print("Predicted Labels!")
+        return labels
+
+    def save_labels(self, labels, indices, sat_file, verbose = True):
+        name = self.get_label_name(sat_file)
+        filepath = os.path.join(self.project_path, "labels", name)
+        self.make_xrData(labels, indices, sat_file, NETCDF_out = filepath)
+        if(verbose):
+            print("Labels saved as " + name )
+
+
+
+
 
     ##########################################################################
 
     def run_training_pipeline(self, verbose = True):
-        """
-        
-        """
+
         self.extract_training_filelist(verbose = verbose)
         self.set_indices_from_mask(verbose = verbose)
         v,l = self.create_training_set(verbose = verbose)
@@ -185,11 +190,17 @@ class cloud_classifier(cloud_trainer, data_handler):
     def run_prediction_pipeline(self, verbose = True):
 
         self.extract_input_filelist(verbose = verbose)
-        self.load_classifier(reload = False, verbose = verbose)
+        self.load_classifier(reload = True, verbose = verbose)
         self.set_indices_from_mask(verbose = verbose)
-        self.create_input_vectors(verbose = verbose)
-        #TODO: EROOR: self.predict_labels(verbose = verbose)
-        #TODO: convert and save labels
+        for file in self.input_files:
+            vectors, indices = self.create_input_vectors(file, verbose = verbose)
+            labels = self.predict_labels(vectors, verbose = verbose)
+            self.save_labels(labels, indices, file, verbose = verbose)
+
+            #TODO: convert and save labels
+
+
+
 
 
 
@@ -218,24 +229,24 @@ class cloud_classifier(cloud_trainer, data_handler):
             print("No folder specified!")
             return
 
-        if ("TIMESTAMP" not in self.sat_file_structure or 
-            "TIMESTAMP" not in self.label_file_structure):
-            print ("Specified file structure must contain region marked as 'TIMESTAMP'")
-            return
+        # if ("TIMESTAMP" not in self.sat_file_structure or 
+        #     "TIMESTAMP" not in self.label_file_structure):
+        #     print ("Specified file structure must contain region marked as 'TIMESTAMP'")
+        #     return
 
-        pattern = "(.{" + str(self.timestamp_length) + "})"
+        # pattern = "(.{" + str(self.timestamp_length) + "})"
 
-        sat_pattern = self.sat_file_structure.replace("TIMESTAMP", pattern)
-        lab_pattern = self.label_file_structure.replace("TIMESTAMP", pattern)
+        # sat_pattern = self.sat_file_structure.replace("TIMESTAMP", pattern)
+        # lab_pattern = self.label_file_structure.replace("TIMESTAMP", pattern)
 
-        sat_comp = re.compile(sat_pattern)
-        lab_comp = re.compile(lab_pattern)
+        sat_pattern = self.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
+        lab_pattern = self.get_filename_pattern(self.label_file_structure, self.timestamp_length)
         sat_files, lab_files = {}, {}
 
         files = os.listdir(folder)
         for file in files:
-            sat_id = sat_comp.match(file)
-            lab_id = lab_comp.match(file)
+            sat_id = sat_pattern.match(file)
+            lab_id = lab_pattern.match(file)
             
             if (sat_id):
                 sat_files[sat_id.group(1)] = os.path.join(folder, file)
@@ -253,3 +264,29 @@ class cloud_classifier(cloud_trainer, data_handler):
                 if(key in lab_files):
                     training_sets.append([sat_files[key], lab_files[key]])
             return  training_sets
+
+
+    def get_filename_pattern(self, structure, t_length):
+        if ("TIMESTAMP" not in structure):
+            raise ValueError("Specified file structure must contain region marked as 'TIMESTAMP'")
+
+        replacemnt =  "(.{" + str(t_length) + "})"
+        pattern = structure.replace("TIMESTAMP", replacemnt)
+        return re.compile(pattern)
+
+
+    def get_label_name(self, sat_file):
+        # get_filename if whole path is given
+        name_split = os.path.split(sat_file)
+        reference_file = name_split[1]
+        # compute regex patterns
+        sat_pattern = self.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
+
+        timestamp = sat_pattern.match(reference_file)
+        if(not timestamp):
+            raise Exception("Satelite data file does not match specified naming pattern")
+        timestamp = timestamp.group(1)
+        label_file = self.label_file_structure.replace("TIMESTAMP", timestamp)
+        name, ext = os.path.splitext(label_file)
+        label_file = name + "_predicted" + ext
+        return label_file
