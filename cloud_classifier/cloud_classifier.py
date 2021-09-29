@@ -108,9 +108,9 @@ class cloud_classifier(cloud_trainer, data_handler):
             print("Filelist created!")
 
 
-    def set_indices_from_mask(self, verbose = True):
+    def apply_mask(self, verbose = True):
         super().set_indices_from_mask(self.mask_file, self.mask_key)
-        filename = os.path.join(self.project_path, "data", "masked_indices")
+        #filename = os.path.join(self.project_path, "data", "masked_indices")
         if (verbose):
             print("Masked indices set!")
 
@@ -182,7 +182,7 @@ class cloud_classifier(cloud_trainer, data_handler):
     def run_training_pipeline(self, verbose = True):
 
         self.extract_training_filelist(verbose = verbose)
-        self.set_indices_from_mask(verbose = verbose)
+        self.apply_mask(verbose = verbose)
         v,l = self.create_training_set(verbose = verbose)
         self.train_classifier(v,l, verbose = verbose)
 
@@ -191,7 +191,7 @@ class cloud_classifier(cloud_trainer, data_handler):
 
         self.extract_input_filelist(verbose = verbose)
         self.load_classifier(reload = True, verbose = verbose)
-        self.set_indices_from_mask(verbose = verbose)
+        self.apply_mask(verbose = verbose)
         for file in self.input_files:
             vectors, indices = self.create_input_vectors(file, verbose = verbose)
             labels = self.predict_labels(vectors, verbose = verbose)

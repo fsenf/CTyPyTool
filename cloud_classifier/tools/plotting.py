@@ -1,11 +1,61 @@
 import matplotlib.pyplot as plt
-#import cartopy.crs as ccrs
-#import cartopy
+import cartopy
+import cartopy.crs as ccrs
 import numpy as np
-import shapely
 import xarray as xr
 
-def plot_data(data, indices = None, lats = None, lons = None, hour = None, ct_channel = "CT"):
+
+
+
+def plot_data(data, x, y):
+    """
+    Plots labels from an xarray onto a worldmap    
+    
+    
+    Parameters
+    ----------
+    data : xr.array
+        2D-array containig the datapoints 
+    """
+
+
+    ct_colors = ['#007800', '#000000','#fabefa','#dca0dc',
+                '#ff6400', '#ffb400', '#f0f000', '#d7d796',
+                '#e6e6e6',  '#c800c8','#0050d7', '#00b4e6',
+                '#00f0f0', '#5ac8a0', ]
+
+    ct_indices = [ 1.5, 2.5, 3.5, 4.5, 
+                   5.5, 6.5, 7.5, 8.5, 
+                   9.5, 10.5, 11.5, 12.5,
+                   13.5, 14.5, 15.5]
+
+    ct_labels = ['land', 'sea', 'snow', 'sea ice', 
+                 'very low', 'low', 'middle', 'high opaque', 
+                 'very high opaque', 'fractional', 'semi. thin', 'semi. mod. thick', 
+                 'semi. thick', 'semi. above low','semi. above snow']
+
+
+    cmap = plt.matplotlib.colors.ListedColormap( ct_colors )
+
+
+    plt.figure(figsize=(12, 4))
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    #ax.set_extent(extent)
+    ax.gridlines()
+    ax.coastlines(resolution='50m')
+    ax.add_feature(cartopy.feature.OCEAN)
+    ax.add_feature(cartopy.feature.LAND, edgecolor='black')
+    ax.add_feature(cartopy.feature.LAKES, edgecolor='black')
+    ax.add_feature(cartopy.feature.RIVERS)  
+    # print("shapes are: ")
+    # print(lons.shape)
+    # print(lats.shape)
+    # print(new_data.shape)
+    ax.contourf(x, y, data, cmap = cmap)
+
+    plt.show()
+
+def plot__old_data(data, indices = None, lats = None, lons = None, hour = None, ct_channel = "CT"):
     '''
     Plots labels from an xarray onto a worldmap    
     
@@ -24,7 +74,6 @@ def plot_data(data, indices = None, lats = None, lons = None, hour = None, ct_ch
     '''
 
     if (lons is None or lats is None):
-        shapely.speedups.disable()
         try:
             lons = data.coords['lon']
             lats = data.coords['lat']

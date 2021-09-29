@@ -146,7 +146,7 @@ class data_handler(base_class):
         return vectors, labels
 
 
-    def check_nwcsaf_version(self, labels, set_value = False):
+    def check_nwcsaf_version(self, labels, set_value = False, verbose = False):
         """
         Checks if a set of labels follows the 2013 or 2016 standard.
 
@@ -167,7 +167,7 @@ class data_handler(base_class):
         r = ex.check_nwcsaf_version(labels)
         if(r is not None and set_value):
             self.nwcsaf_in_version = r
-        if(self.verbose):
+        if(verbose):
             if (r is None):
                 print("Could not determine ncwsaf version of the labels")
             else:
@@ -216,7 +216,7 @@ class data_handler(base_class):
 
 
 
-    def extract_labels(self, filename, indices, hour = 0,):
+    def extract_labels(self, filename, indices = None, hour = 0):
         """
         Extract labels from netCDF file at given indices and time
 
@@ -270,7 +270,7 @@ class data_handler(base_class):
             Indices of the given labels in respect to the coordiantes from a reference file  
 
         reference_file : string
-            (Optional) NETCDF file with the same scope as the label data.
+            (Optional) filename of a NETCDF file with the same scope as the label data.
             This field is requiered if no training sets have been added to the data_handler!
         
         NETCDF_out : string
@@ -353,17 +353,42 @@ class data_handler(base_class):
         return v,l
 
 
-    def plot_labels(self, labels = None, filename = None, hour = None):
+
+
+    def plot_labels(self, data = None, data_file = None, georef_file = None, reduce_to_mask = False):
+        """ 
+            Plots labels either from a xarray dataset NetCDF file 
         """
-        Plots labels either from a xarray dataset or NetCDF file-
-        """
-        if (labels is None and filename is None):
+
+        if (data is None and data_file is None):
             print("No data given!")
             return
-        elif (labels is None):
-            labels = xr.open_dataset(filename)
+        elif (data is None):
+            data = xr.open_dataset(data_file)
 
+        label_data = data[self.cloudtype_channel][0]
 
+        if(georef_file is None):
+            x = data.coords['lon']
+            y = data.coords['lat']
+        else:
+            georef = xr.open_dataset(georef_file)
+            x = georef.coords['lon']
+            y = georef.coords['lat']
 
-        pl.plot_data(labels, indices = self.masked_indices, hour = hour, ct_channel = self.cloudtype_channel)
+        # shrink to area, transform to numpy
+        indices = None
+        if(reduce_to_mask):
+            if self.masked_indices is None:
+                self.set_indices_from_mask(self.mask_file, self.mask_key)
+            indices = self.masked_indices
 
+        else:
+            indices = np.where(~np.isnan(label_data))
+
+        labels = np.empty(label_data.shape)
+        labels[:] = np.nan
+        label_data = np.array(label_data)[indices[0], indices[1]]
+        labels[indices[0],indices[1]] = label_data
+
+        pl.plot_data(labels, x, y)

@@ -162,7 +162,6 @@ def make_xarray(labels, indices, reference_filename, labelkey = "CT"):
     new_data[:] = np.nan
     new_data[indices[0],indices[1]] = labels
     new_data = xr.DataArray(new_data, dims = dims, coords = coords, name = labelkey)
-
     return new_data.to_dataset()
  
 def get_georef(filename):
@@ -200,7 +199,8 @@ def check_nwcsaf_version(labels):
     """
     maps netcdf cloud types from the 2013 standard to the 2016 standard
     """
-def switch_nwcsaf_version(labels, target_version):
+
+def switch_nwcsaf_version(labels,target_version):
     if (target_version == 'v2018'):
         return switch_2016(labels)
     if (target_version == 'v2013'):
