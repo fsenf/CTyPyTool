@@ -125,7 +125,7 @@ def create_difference_vectors(data, keep_original_values = False):
 
 
 
-def extract_labels(filename, indices, hour = 0, ct_channel = "CT"):
+def extract_labels(filename, indices = None, hour = 0, ct_channel = "CT"):
     """
     Extract labels from xarray at given indices and time
 
@@ -183,7 +183,6 @@ def check_nwcsaf_version(labels):
     uses occurences in layers 16-19 (only in use at 2013 standard)
     and 7,9,11,13 (only in use at 2016 standard) 
     """
-
     high_sum = odd_sum = 0
     for i in range(16,20):
         high_sum += (labels == i).sum()
@@ -196,11 +195,16 @@ def check_nwcsaf_version(labels):
         return 'v2018'
     return None
 
+
+
+def switch_nwcsaf_version(labels, target_version, input_version = None):
     """
     maps netcdf cloud types from the 2013 standard to the 2016 standard
     """
-
-def switch_nwcsaf_version(labels,target_version):
+    if (input_version is None):
+        input_version = check_nwcsaf_version(labels)
+    if (target_version == input_version):
+        return;
     if (target_version == 'v2018'):
         return switch_2016(labels)
     if (target_version == 'v2013'):

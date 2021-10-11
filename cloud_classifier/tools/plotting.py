@@ -94,7 +94,6 @@ def plot__old_data(data, indices = None, lats = None, lons = None, hour = None, 
         data = data[ct_channel][hour]
 
 
-
     ct_colors = ['#007800', '#000000','#fabefa','#dca0dc',
                 '#ff6400', '#ffb400', '#f0f000', '#d7d796',
                 '#e6e6e6',  '#c800c8','#0050d7', '#00b4e6',

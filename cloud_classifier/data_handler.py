@@ -139,15 +139,16 @@ class data_handler(base_class):
             vectors = ex.create_difference_vectors(vectors, self.original_values)
         
         if (self.nwcsaf_in_version == 'auto'):
-            self.check_nwcsaf_version(labels, True)
-
-        if (self.nwcsaf_in_version is not self.nwcsaf_out_version):
-            labels = ex.switch_nwcsaf_version(labels, self.nwcsaf_out_version)
+            self.nwcsaf_in_version = self.check_nwcsaf_version(labels, verbose = False)
+        
+        labels = ex.switch_nwcsaf_version(labels, self.nwcsaf_out_version, self.nwcsaf_in_version)
 
         return vectors, labels
 
 
-    def check_nwcsaf_version(self, labels, set_value = False, verbose = False):
+
+
+    def check_nwcsaf_version(self, labels = None, filename = None, verbose = True):
         """
         Checks if a set of labels follows the 2013 or 2016 standard.
 
@@ -165,9 +166,12 @@ class data_handler(base_class):
         string or None
             String naming the used version or None if version couldnt be determined
         """
+        if (labels is None and filename is None):
+            raise  ValueError("Label or filename must be specified")
+        if (labels is None):
+            labels = ex.extract_labels(filename = filename, ct_channel = self.cloudtype_channel)
+            
         r = ex.check_nwcsaf_version(labels)
-        if(r is not None and set_value):
-            self.nwcsaf_in_version = r
         if(verbose):
             if (r is None):
                 print("Could not determine ncwsaf version of the labels")
@@ -368,7 +372,6 @@ class data_handler(base_class):
             data = xr.open_dataset(data_file)
 
         label_data = data[self.cloudtype_channel][0]
-
         if(georef_file is None):
             x = data.coords['lon']
             y = data.coords['lat']
@@ -391,5 +394,6 @@ class data_handler(base_class):
         labels[:] = np.nan
         label_data = np.array(label_data)[indices[0], indices[1]]
         labels[indices[0],indices[1]] = label_data
+        labels = ex.switch_nwcsaf_version(labels, 'v2018')
 
         pl.plot_data(labels, x, y)
