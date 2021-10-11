@@ -47,7 +47,8 @@ class data_handler(base_class):
             'verbose',
             'training_sets',
             'mask_file',
-            'mask_key'
+            'mask_key',
+            'mask_sea_coding'
             ]
 
         super().init_class_variables(class_variables)
@@ -69,7 +70,7 @@ class data_handler(base_class):
         """
         mask_data = h5py.File(filename, 'r')
         m = xr.DataArray([row for row in mask_data[selected_mask]], name = selected_mask)
-        self.masked_indices = np.where(m)
+        self.masked_indices = np.where(m == self.mask_sea_coding)
 
         self.mask = [filename, selected_mask]
         return self.masked_indices

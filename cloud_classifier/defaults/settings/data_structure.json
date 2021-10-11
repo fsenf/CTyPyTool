@@ -7,6 +7,7 @@
 
     "mask_file" : "../data/training_data/lsm_mask_medi.nc",
     "mask_key" : "land_sea_mask",
+    "mask_sea_coding" : 0, 
 
     "input_channels": [
         "bt062",
