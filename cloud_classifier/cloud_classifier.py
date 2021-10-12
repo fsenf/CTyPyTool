@@ -131,6 +131,9 @@ class cloud_classifier(cloud_trainer, data_handler):
             print("Classifier created!")
 
 
+    def create_reference_labelfile(self, input_file):
+        output_file = os.path.join(self.project_path, "data", "label_reference.nc")
+        super().create_reference_labelfile(input_file, output_file)
 
 
 
@@ -151,7 +154,6 @@ class cloud_classifier(cloud_trainer, data_handler):
             filename = os.path.join(self.project_path, "data", "masked_indices")
             if(verbose):
                 print("Classifier loaded!")
-
 
     def create_input_vectors(self, file, verbose = True):
         vectors, indices = super().create_test_vectors(file)

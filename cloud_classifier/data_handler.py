@@ -48,7 +48,8 @@ class data_handler(base_class):
             'training_sets',
             'mask_file',
             'mask_key',
-            'mask_sea_coding'
+            'mask_sea_coding',
+            'reference_file'
             ]
 
         super().init_class_variables(class_variables)
@@ -93,6 +94,8 @@ class data_handler(base_class):
         if (self.training_sets is None):
             self.training_sets = []
         self.training_sets.append([filename_data, filename_labels])
+        if reference_file is None:
+            self.reference_file = filename_labels
         return
 
 
@@ -276,7 +279,7 @@ class data_handler(base_class):
 
         reference_file : string
             (Optional) filename of a NETCDF file with the same scope as the label data.
-            This field is requiered if no training sets have been added to the data_handler!
+            This field is requiered if no refernce file has been created before!
         
         NETCDF_out : string
             (Optional) If specified, the labels will be written to a NETCDF file with this name
@@ -287,21 +290,13 @@ class data_handler(base_class):
             labels in the form of an xarray dataset
 
         """
+        if (reference_file is None and self.reference_file is None):
+            raise ValueError("Reference file must be set or specified!")
         if (reference_file is None):
-            print("No refrence file given!")
-            if (not self.latest_test_file is None):
-                reference_file = self.latest_test_file
-                print("Using latest test file as reference")
+            reference_file = self.reference_file
 
-            elif (not self.training_sets is None):
-                reference_file = self.training_sets[0][0]
-                print("Using training data as reference!")
-
-            else:
-                print("Can not make xarray without reference file")
-                return
-
-        xar = ex.make_xarray(labels, indices, reference_file)
+        xar = ex.make_xrData(labels, indices, reference_file,
+                ct_channel = self.cloudtype_channel)
 
         if (not NETCDF_out is None):
             ex.write_NETCDF(xar, NETCDF_out)
@@ -358,19 +353,29 @@ class data_handler(base_class):
         return v,l
 
 
+    def create_reference_labelfile(self, input_file, output_file):
+        """
+        Reads a label file and creates a reference file with all meta data in order
+        to later use this as a template for writing predicted labels to file.
+        """
+        data = xr.open_dataset(input_file)
+
+        #label_data = data[self.cloudtype_channel][0]
+        #label_data
+        data.to_netcdf(path=output_file, mode='w')
+        self.reference_file = output_file
 
 
     def plot_labels(self, data = None, data_file = None, georef_file = None, reduce_to_mask = False):
         """ 
-            Plots labels either from a xarray dataset NetCDF file 
+         Plots labels either from a xarray dataset NetCDF file 
         """
 
-        if (data is None and data_file is None):
+        if(data is None and data_file is None):
             print("No data given!")
             return
         elif (data is None):
             data = xr.open_dataset(data_file)
-
         label_data = data[self.cloudtype_channel][0]
         if(georef_file is None):
             x = data.coords['lon']
@@ -394,6 +399,5 @@ class data_handler(base_class):
         labels[:] = np.nan
         label_data = np.array(label_data)[indices[0], indices[1]]
         labels[indices[0],indices[1]] = label_data
-        labels = ex.switch_nwcsaf_version(labels, 'v2018')
-
+        labels = ex.switch_nwcsaf_version(labels, target_version = 'v2018')
         pl.plot_data(labels, x, y)

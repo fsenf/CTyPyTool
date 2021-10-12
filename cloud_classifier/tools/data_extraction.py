@@ -149,20 +149,24 @@ def clean_test_vectors(vectors, indices):
     return vectors[valid], np.array([indices[0][valid], indices[1][valid]])
 
 
-def make_xarray(labels, indices, reference_filename, labelkey = "CT"):
+def make_xrData(labels, indices, reference_filename, ct_channel = "ct"):
     """
     returns coordination data from NETCDF file
     """
-    data = xr.open_dataset(reference_filename)
-    coords = {'lat': data.coords['lat'], 'lon':data.coords['lon']}
-    dims = ['rows', 'cols']
-    shape = coords['lon'].shape
+    print(reference_filename)
+    out = xr.open_dataset(reference_filename)
+    coords = out.coords
+    dims = out.dims
+    shape = out[ct_channel][0].shape # 0 is the hour
+    # coords = {'lat': data.coords['lat'], 'lon':data.coords['lon']}
+    # dims = ['rows', 'cols']
+    # shape = coords['lon'].shape
 
     new_data = np.empty(shape)
     new_data[:] = np.nan
     new_data[indices[0],indices[1]] = labels
-    new_data = xr.DataArray(new_data, dims = dims, coords = coords, name = labelkey)
-    return new_data.to_dataset()
+    out[ct_channel][0] = new_data
+    return out
  
 def get_georef(filename):
 
@@ -204,7 +208,7 @@ def switch_nwcsaf_version(labels, target_version, input_version = None):
     if (input_version is None):
         input_version = check_nwcsaf_version(labels)
     if (target_version == input_version):
-        return;
+        return labels
     if (target_version == 'v2018'):
         return switch_2016(labels)
     if (target_version == 'v2013'):
