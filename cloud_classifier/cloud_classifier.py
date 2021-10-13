@@ -131,9 +131,13 @@ class cloud_classifier(cloud_trainer, data_handler):
             print("Classifier created!")
 
 
-    def create_reference_labelfile(self, input_file):
+    def create_reference_file(self, input_file = None, verbose = True):
+        if (input_file is None):
+            if (self.training_sets is None):
+                raise ValueError("No reference file found")
+            input_file = self.training_sets[0][1]
         output_file = os.path.join(self.project_path, "data", "label_reference.nc")
-        super().create_reference_labelfile(input_file, output_file)
+        super().create_reference_file(input_file, output_file)
 
 
 
@@ -171,7 +175,7 @@ class cloud_classifier(cloud_trainer, data_handler):
     def save_labels(self, labels, indices, sat_file, verbose = True):
         name = self.get_label_name(sat_file)
         filepath = os.path.join(self.project_path, "labels", name)
-        self.make_xrData(labels, indices, sat_file, NETCDF_out = filepath)
+        self.make_xrData(labels, indices, NETCDF_out = filepath)
         if(verbose):
             print("Labels saved as " + name )
 
@@ -181,17 +185,19 @@ class cloud_classifier(cloud_trainer, data_handler):
 
     ##########################################################################
 
-    def run_training_pipeline(self, verbose = True):
-
-        self.extract_training_filelist(verbose = verbose)
+    def run_training_pipeline(self, verbose = True, create_filelist = True):
+        if (create_filelist):
+            self.extract_training_filelist(verbose = verbose)
+        if (self.reference_file is None):
+            self.create_reference_file()
         self.apply_mask(verbose = verbose)
         v,l = self.create_training_set(verbose = verbose)
         self.train_classifier(v,l, verbose = verbose)
 
 
-    def run_prediction_pipeline(self, verbose = True):
-
-        self.extract_input_filelist(verbose = verbose)
+    def run_prediction_pipeline(self, verbose = True, create_filelist = True):
+        if (create_filelist):
+            self.extract_input_filelist(verbose = verbose)
         self.load_classifier(reload = True, verbose = verbose)
         self.apply_mask(verbose = verbose)
         for file in self.input_files:

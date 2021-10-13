@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 import cartopy
 import cartopy.crs as ccrs
 import numpy as np
@@ -34,26 +35,31 @@ def plot_data(data, x, y):
                  'very high opaque', 'fractional', 'semi. thin', 'semi. mod. thick', 
                  'semi. thick', 'semi. above low','semi. above snow']
 
+    extent = [-8, 45, 30, 45]
+    plt.figure(figsize=(12, 5))
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.coastlines(resolution='50m')
+    ax.set_extent(extent)
+    #ax.gridlines()
+    # ax.add_feature(cartopy.feature.OCEAN)
+    ax.add_feature(cartopy.feature.LAND, edgecolor='black')
+    # ax.add_feature(cartopy.feature.LAKES, edgecolor='black')
+    # ax.add_feature(cartopy.feature.RIVERS)  
 
     cmap = plt.matplotlib.colors.ListedColormap( ct_colors )
+    # pcm = plt.contourf(x, y, data, cmap = cmap, transform = ccrs.PlateCarree())
+    pcm = ax.pcolormesh(x,y, data, cmap = cmap, vmin = 1, vmax = 15)
+    
 
-
-    plt.figure(figsize=(12, 4))
-    ax = plt.axes(projection=ccrs.PlateCarree())
-    #ax.set_extent(extent)
-    ax.gridlines()
-    ax.coastlines(resolution='50m')
-    ax.add_feature(cartopy.feature.OCEAN)
-    ax.add_feature(cartopy.feature.LAND, edgecolor='black')
-    ax.add_feature(cartopy.feature.LAKES, edgecolor='black')
-    ax.add_feature(cartopy.feature.RIVERS)  
-    # print("shapes are: ")
-    # print(lons.shape)
-    # print(lats.shape)
-    # print(new_data.shape)
-    ax.contourf(x, y, data, cmap = cmap)
-
+    fig = plt.gcf()
+    a2 = fig.add_axes( [0.95, 0.22, 0.015, 0.6])     
+    cbar = plt.colorbar(pcm, a2)
+    cbar.set_ticks(ct_indices)
+    cbar.set_ticklabels(ct_labels)
     plt.show()
+
+
+
 
 def plot__old_data(data, indices = None, lats = None, lons = None, hour = None, ct_channel = "CT"):
     '''

@@ -353,15 +353,12 @@ class data_handler(base_class):
         return v,l
 
 
-    def create_reference_labelfile(self, input_file, output_file):
+    def create_reference_file(self, input_file, output_file):
         """
         Reads a label file and creates a reference file with all meta data in order
         to later use this as a template for writing predicted labels to file.
         """
         data = xr.open_dataset(input_file)
-
-        #label_data = data[self.cloudtype_channel][0]
-        #label_data
         data.to_netcdf(path=output_file, mode='w')
         self.reference_file = output_file
 
@@ -397,7 +394,13 @@ class data_handler(base_class):
 
         labels = np.empty(label_data.shape)
         labels[:] = np.nan
+        # x_red = y_red = labels
         label_data = np.array(label_data)[indices[0], indices[1]]
         labels[indices[0],indices[1]] = label_data
         labels = ex.switch_nwcsaf_version(labels, target_version = 'v2018')
+
+        # x = np.array(x)[indices[0], indices[1]]
+        # y = np.array(y)[indices[0], indices[1]]
+        # x_red[indices[0],indices[1]] = x
+        # y_red[indices[0],indices[1]] = y
         pl.plot_data(labels, x, y)

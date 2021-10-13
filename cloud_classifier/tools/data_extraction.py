@@ -153,7 +153,6 @@ def make_xrData(labels, indices, reference_filename, ct_channel = "ct"):
     """
     returns coordination data from NETCDF file
     """
-    print(reference_filename)
     out = xr.open_dataset(reference_filename)
     coords = out.coords
     dims = out.dims
