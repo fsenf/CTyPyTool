@@ -13,10 +13,15 @@ class base_class:
 
         self.setting_files = [
             "config.json", 
-            "training_sets.json", 
             "data_structure.json", 
-            "input_files.json"
             ]
+        self.filelists = [
+            "input_files.json",
+            "evaluation_sets.json",
+            "training_sets.json", 
+            "label_files.json"
+            ]
+
         dirname = os.path.dirname(__file__)
 
         self.default_path = os.path.join(dirname, "defaults")
@@ -32,7 +37,7 @@ class base_class:
 
         # init all class parameterst
         self.__dict__.update((k,None) for k in self.class_variables)
-        self.load_settings(self.default_path)
+        self.load_project_data(self.default_path)
         # update with given parameters
         self.set_parameters(**kwargs)
 
@@ -43,15 +48,21 @@ class base_class:
         self.class_variables = set(self.class_variables).union(set(class_variables))
 
 
-    def load_settings(self, path):
+    def load_project_data(self, path):
         for file in self.setting_files:
             filepath = os.path.join(path, "settings", file)
             self.load_parameters(filepath)
+        for file in self.filelists:
+            filepath = os.path.join(path, "filelists", file)
+            self.load_parameters(filepath)
 
-    def save_settings(self, path):
+    def save_project_data(self, path):
         for file in self.setting_files:
             filepath = os.path.join(path, "settings", file)
-            self.save_parameters(path)
+            self.save_parameters(filepath)
+        for file in self.filelists:
+            filepath = os.path.join(path, "filelists", file)
+            self.save_parameters(filepath)
 
 
 

@@ -3,7 +3,8 @@ import os
 import numpy as np
 import shutil
 import re
-
+import random
+from pathlib import Path
 
 import cloud_trainer as ct
 import data_handler as dh
@@ -28,15 +29,22 @@ class cloud_classifier(cloud_trainer, data_handler):
     """
 
     def __init__ (self, **kwargs):
+
+
         class_variables =  {
             "input_source_folder",
-            "input_files"
+            "input_files",
+            "evaluation_sets"
             }
+        self.project_path = None
 
         super().init_class_variables(class_variables)
         super().__init__(**kwargs)
 
-
+        # if(Path(path)).is_dir():
+        #     self.set_project_path(path)
+        #     self.load_project_data()
+        # else:
 
 
 
@@ -62,15 +70,18 @@ class cloud_classifier(cloud_trainer, data_handler):
             path = os.getcwd()
 
         folder = os.path.join(path, name)
-        
-        try:
-            shutil.copytree(self.default_path, folder)
+        if (os.path.isdir(folder)):
+            print("Folder with given name already exits")
+        else:
+            try:
+                shutil.copytree(self.default_path, folder)
 
-        except Exception:
-            print("Could not initalize project settings at given location")
-            return 0
-
-        self.set_project_path(folder)
+            except Exception:
+                print("Could not initalize project settings at given location")
+                return 0
+                
+        self.project_path = path
+        self.load_project(folder)
 
 
     def load_project(self, path):
@@ -82,14 +93,36 @@ class cloud_classifier(cloud_trainer, data_handler):
         path : string 
             Path to the stored project
         """  
-        self.set_project_path(path)
-        self.load_settings(self.project_path)
+        self.project_path = path
+        self.load_project_data()
 
-    def save_project(self):
-        self.save_all(self.project_path)
+
+    # def save_project(self):
+    #     self.save_all(self.project_path)
     
     def set_project_path(self, path):
         self.project_path = path
+
+
+    def load_project_data(self, path = None):
+        if (path is None):
+            path = self.project_path 
+        if (path is None):
+            raise ValueError("Project path not set")
+        super().load_project_data(path)
+
+    def save_project_data(self, path = None):
+        if (path is None):
+            path = self.project_path 
+        if (path is None):
+            raise ValueError("Project path not set")
+        super().save_project_data(path)
+
+
+    def set_parameters(self, **kwargs):
+        super().set_parameters(**kwargs)
+        if(not self.project_path is None):
+            super().save_project_data(self.project_path)
 
 
 
@@ -99,8 +132,10 @@ class cloud_classifier(cloud_trainer, data_handler):
     ##########################################################################
 
 
+
+
     #### training
-    def extract_training_filelist(self, verbose = True):
+    def create_training_filelist(self, verbose = True):
         self.training_sets =  self.generate_filelist_from_folder(self.data_source_folder)
         filepath = os.path.join(self.project_path, "settings", "training_sets.json")
         self.save_parameters(filepath)
@@ -159,6 +194,7 @@ class cloud_classifier(cloud_trainer, data_handler):
             if(verbose):
                 print("Classifier loaded!")
 
+
     def create_input_vectors(self, file, verbose = True):
         vectors, indices = super().create_test_vectors(file)
         if(verbose):
@@ -178,16 +214,29 @@ class cloud_classifier(cloud_trainer, data_handler):
         self.make_xrData(labels, indices, NETCDF_out = filepath)
         if(verbose):
             print("Labels saved as " + name )
+        return filepath
 
 
-
+    ### evaluation
+    def create_split_training_filelist(self):
+        datasets =  self.generate_filelist_from_folder(self.data_source_folder)
+        self.training_sets, self.evaluation_sets = self.split_sets(datasets, 24, timesensitive = True)
+        self.input_files = [s[0] for s in self.evaluation_sets]
+        self.save_project_data()
 
 
     ##########################################################################
 
-    def run_training_pipeline(self, verbose = True, create_filelist = True):
+    def run_training_pipeline(self, verbose = True, create_filelist = True, evaluation = False):
+
+        self.load_project_data()
+
         if (create_filelist):
-            self.extract_training_filelist(verbose = verbose)
+            if (evaluation):
+                self.create_split_training_filelist()
+
+            else:
+                self.create_training_filelist(verbose = verbose)
         if (self.reference_file is None):
             self.create_reference_file()
         self.apply_mask(verbose = verbose)
@@ -195,20 +244,24 @@ class cloud_classifier(cloud_trainer, data_handler):
         self.train_classifier(v,l, verbose = verbose)
 
 
-    def run_prediction_pipeline(self, verbose = True, create_filelist = True):
-        if (create_filelist):
+    def run_prediction_pipeline(self, verbose = True, create_filelist = True, evaluation = False):
+
+        self.load_project_data()
+
+        if (create_filelist and not evaluation):
             self.extract_input_filelist(verbose = verbose)
+
         self.load_classifier(reload = True, verbose = verbose)
         self.apply_mask(verbose = verbose)
+        self.label_files = []
         for file in self.input_files:
             vectors, indices = self.create_input_vectors(file, verbose = verbose)
             labels = self.predict_labels(vectors, verbose = verbose)
-            self.save_labels(labels, indices, file, verbose = verbose)
+            filename = self.save_labels(labels, indices, file, verbose = verbose)
+            self.label_files.append(filename)
 
+        self.save_project_data()
             #TODO: convert and save labels
-
-
-
 
 
 
@@ -237,16 +290,6 @@ class cloud_classifier(cloud_trainer, data_handler):
             print("No folder specified!")
             return
 
-        # if ("TIMESTAMP" not in self.sat_file_structure or 
-        #     "TIMESTAMP" not in self.label_file_structure):
-        #     print ("Specified file structure must contain region marked as 'TIMESTAMP'")
-        #     return
-
-        # pattern = "(.{" + str(self.timestamp_length) + "})"
-
-        # sat_pattern = self.sat_file_structure.replace("TIMESTAMP", pattern)
-        # lab_pattern = self.label_file_structure.replace("TIMESTAMP", pattern)
-
         sat_pattern = self.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
         lab_pattern = self.get_filename_pattern(self.label_file_structure, self.timestamp_length)
         sat_files, lab_files = {}, {}
@@ -274,13 +317,53 @@ class cloud_classifier(cloud_trainer, data_handler):
             return  training_sets
 
 
+
+
+
+    def split_sets(self, dataset, eval_size = 24, timesensitive = True):
+        """
+        splits a set of data into an training and an evaluation set
+        """
+        sat_pattern = self.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
+
+        eval_indeces = []
+        if(timesensitive):
+            if(eval_size % 24 != 0):
+                raise ValueError("When using timesensitive splitting eval_size must be multiple of 24")
+            timesorted = [[] for _ in range(24)]
+            for i in range(len(dataset)):
+                sat_id = sat_pattern.match(os.path.basename(dataset[i][0]))
+                if(sat_id):
+                    timestamp = sat_id.group(1)
+                    hour = int(timestamp[-4:-2])
+                    timesorted[hour].append(i)
+            n = int(eval_size/24)
+            for h in range(24):
+                eval_indeces += random.sample(timesorted[h], n)
+        else:
+            eval_indeces = random.sample(range(len(dataset)), eval_size)
+
+        training_indeces = [i for i in range(len(dataset)) if i not in eval_indeces]
+        eval_set = [dataset[i] for i in eval_indeces]
+        training_set = [dataset[i] for i in training_indeces]
+
+        return training_set, eval_set
+
+
+
+
     def get_filename_pattern(self, structure, t_length):
         if ("TIMESTAMP" not in structure):
             raise ValueError("Specified file structure must contain region marked as 'TIMESTAMP'")
 
         replacemnt =  "(.{" + str(t_length) + "})"
-        pattern = structure.replace("TIMESTAMP", replacemnt)
+        pattern =  structure.replace("TIMESTAMP", replacemnt)
         return re.compile(pattern)
+
+    def get_hour(self, filename, pattern):
+        timestamp = pattern.match(file).group(1)
+        return int(timestamp[-4:-2])
+
 
 
     def get_label_name(self, sat_file):

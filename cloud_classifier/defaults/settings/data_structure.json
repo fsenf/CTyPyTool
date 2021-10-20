@@ -1,5 +1,5 @@
 {   
-    "data_source_folder" : "../data/training_data",
+    "data_source_folder" : "../data/full_dataset",
     "timestamp_length" : 13,
     "sat_file_structure" : "msevi-medi-TIMESTAMP.nc",
     "label_file_structure" : "nwcsaf_msevi-medi-TIMESTAMP.nc",
@@ -26,6 +26,6 @@
     ],
     "difference_vectors": true,
     "original_values": true,
-    "samples": 1000
+    "samples": 100
 
 }

@@ -7,13 +7,16 @@ import os
 from joblib import dump, load
 
 
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import cartopy
+import cartopy.crs as ccrs
+
 import tools.data_extraction as ex
-import tools.plotting as pl
 import base_class
 #
 import importlib
 importlib.reload(ex)
-importlib.reload(pl)
 
 from base_class import base_class
 from cloud_trainer import cloud_trainer
@@ -55,7 +58,6 @@ class data_handler(base_class):
         super().init_class_variables(class_variables)
         super().__init__( **kwargs)
         self.masked_indices = None
-        self.latest_test_file = None
 
     def set_indices_from_mask(self, filename, selected_mask):
         """
@@ -218,7 +220,6 @@ class data_handler(base_class):
         if (self.difference_vectors):
             vectors = ex.create_difference_vectors(vectors, self.original_values)
 
-        self.latest_test_file = filename
         return vectors, indices
 
 
@@ -363,9 +364,130 @@ class data_handler(base_class):
         self.reference_file = output_file
 
 
+
+
+
+
+################ Ploptting, move to other file
+
+
+
+
+    def definde_NWCSAF_variables(self):
+        ct_colors = ['#007800', '#000000','#fabefa','#dca0dc',
+                '#ff6400', '#ffb400', '#f0f000', '#d7d796',
+                '#e6e6e6',  '#c800c8','#0050d7', '#00b4e6',
+                '#00f0f0', '#5ac8a0', ]
+
+        ct_indices = [ 1.5, 2.5, 3.5, 4.5, 
+                   5.5, 6.5, 7.5, 8.5, 
+                   9.5, 10.5, 11.5, 12.5,
+                   13.5, 14.5, 15.5]
+
+        ct_labels = ['land', 'sea', 'snow', 'sea ice', 
+                     'very low', 'low', 'middle', 'high opaque', 
+                     'very high opaque', 'fractional', 'semi. thin', 'semi. mod. thick', 
+                     'semi. thick', 'semi. above low','semi. above snow']
+
+        return ct_colors, ct_indices, ct_labels
+
+
     def plot_labels(self, data = None, data_file = None, georef_file = None, reduce_to_mask = False):
-        """ 
-         Plots labels either from a xarray dataset NetCDF file 
+        """
+        Plots labels from an xarray onto a worldmap    
+        
+        
+        Parameters
+        ----------
+        data : xr.array
+            2D-array containig the datapoints 
+        """
+
+        ct_colors, ct_indices, ct_labels = self.definde_NWCSAF_variables()
+
+
+        extent = [-8, 45, 30, 45]
+        plt.figure(figsize=(12, 4))
+        ax = plt.axes(projection=ccrs.PlateCarree())
+        ax.coastlines(resolution='50m')
+        ax.set_extent(extent)
+        #ax.gridlines()
+        # ax.add_feature(cartopy.feature.OCEAN)
+        ax.add_feature(cartopy.feature.LAND, edgecolor='black')
+        # ax.add_feature(cartopy.feature.LAKES, edgecolor='black')
+        # ax.add_feature(cartopy.feature.RIVERS)  
+
+        cmap = plt.matplotlib.colors.ListedColormap( ct_colors )
+
+        labels, x, y = self.get_plotable(data, data_file, georef_file, reduce_to_mask)
+        pcm = ax.pcolormesh(x,y, data, cmap = cmap, vmin = 1, vmax = 15)
+        
+
+        fig = plt.gcf()
+        a2 = fig.add_axes( [0.95, 0.22, 0.015, 0.6])     
+        cbar = plt.colorbar(pcm, a2)
+        cbar.set_ticks(ct_indices)
+        cbar.set_ticklabels(ct_labels)
+        plt.show()
+
+
+    def plot_multiple(self, label_files, truth_file = None, georef_file = None, 
+            reduce_to_mask = False, plot_titles = None):
+        """
+        plots multiple labelfiles and possibly ground truth as subplots
+        """
+        ct_colors, ct_indices, ct_labels = self.definde_NWCSAF_variables()
+        cmap = plt.matplotlib.colors.ListedColormap(ct_colors)
+        extent = [-6, 42, 25, 50]
+
+
+        plots = []
+        for lf in label_files:
+            r, x, y = self.get_plotable(data_file = lf, georef_file = georef_file, reduce_to_mask = reduce_to_mask)
+            plots.append(r)
+        if (not truth_file is None):
+            truth = self.get_plotable(data_file = truth_file, georef_file = georef_file, reduce_to_mask = reduce_to_mask)[0]
+            plots.append(truth)
+
+        length = len(plots)
+
+        plt.figure(figsize=(12, 4))
+
+        for i in range(length):
+            ax = plt.subplot(1,length,i+1, projection=ccrs.PlateCarree())
+            ax.add_feature(cartopy.feature.LAND, edgecolor='black')
+            ax.coastlines(resolution='50m')
+            ax.set_extent(extent)
+            pcm = ax.pcolormesh(x,y, plots[i], cmap = cmap, vmin = 1, vmax = 15)
+
+            if (not plot_titles is None and i < len(plot_titles)):
+                ax.set_title(plot_titles[i])
+
+            if (not truth_file is None and i < len(plots)-1):
+                print("her")
+                self.get_match_string(plots[i], plots[-1])
+
+
+            if (i+1 == length):
+                if(not truth_file is None and len(plots)<len(plot_titles)):
+                    ax.set_title("Ground Truth")
+
+
+
+                fig = plt.gcf()
+                a2 = fig.add_axes( [0.95, 0.22, 0.015, 0.6])     
+                cbar = plt.colorbar(pcm, a2)
+                cbar.set_ticks(ct_indices)
+                cbar.set_ticklabels(ct_labels)
+                plt.show()
+
+
+
+
+
+    def get_plotable(self, data = None, data_file = None, georef_file = None, reduce_to_mask = False):
+        """
+        Returns data and coordinates in a plottable format 
         """
 
         if(data is None and data_file is None):
@@ -394,13 +516,15 @@ class data_handler(base_class):
 
         labels = np.empty(label_data.shape)
         labels[:] = np.nan
-        # x_red = y_red = labels
         label_data = np.array(label_data)[indices[0], indices[1]]
         labels[indices[0],indices[1]] = label_data
         labels = ex.switch_nwcsaf_version(labels, target_version = 'v2018')
 
-        # x = np.array(x)[indices[0], indices[1]]
-        # y = np.array(y)[indices[0], indices[1]]
-        # x_red[indices[0],indices[1]] = x
-        # y_red[indices[0],indices[1]] = y
-        pl.plot_data(labels, x, y)
+        return labels, x, y
+
+
+    def get_match_string(self, labels, truth):
+        correct = np.sum(labels == truth)
+        total = len(truth.flatten())
+        
+        print("Correctly identified %i out of %i labels! \nPositve rate is: %f" % (correct, total, correct/total))
