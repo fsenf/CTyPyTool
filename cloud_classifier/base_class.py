@@ -37,7 +37,7 @@ class base_class:
 
         # init all class parameterst
         self.__dict__.update((k,None) for k in self.class_variables)
-        self.load_project_data(self.default_path)
+        self.load_data(self.default_path)
         # update with given parameters
         self.set_parameters(**kwargs)
 
@@ -48,7 +48,8 @@ class base_class:
         self.class_variables = set(self.class_variables).union(set(class_variables))
 
 
-    def load_project_data(self, path):
+    def load_data(self, path):
+        print("loading from: " + path)
         for file in self.setting_files:
             filepath = os.path.join(path, "settings", file)
             self.load_parameters(filepath)
@@ -56,7 +57,7 @@ class base_class:
             filepath = os.path.join(path, "filelists", file)
             self.load_parameters(filepath)
 
-    def save_project_data(self, path):
+    def save_data(self, path):
         for file in self.setting_files:
             filepath = os.path.join(path, "settings", file)
             self.save_parameters(filepath)
@@ -87,6 +88,8 @@ class base_class:
         # get saved entries
         with open(filepath, 'r') as outfile:
             saved_params =  json.load(outfile)
+            #print(saved_params)
+            #print(self.label_files)
             # update saved params
             saved_params.update({k:self.__dict__[k] for k in saved_params.keys() if k in self.class_variables})
             json_obj = json.dumps(saved_params, indent = 4)

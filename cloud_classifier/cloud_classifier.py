@@ -34,7 +34,8 @@ class cloud_classifier(cloud_trainer, data_handler):
         class_variables =  {
             "input_source_folder",
             "input_files",
-            "evaluation_sets"
+            "evaluation_sets",
+            "label_files"
             }
         self.project_path = None
 
@@ -79,8 +80,7 @@ class cloud_classifier(cloud_trainer, data_handler):
             except Exception:
                 print("Could not initalize project settings at given location")
                 return 0
-                
-        self.project_path = path
+        print(folder)
         self.load_project(folder)
 
 
@@ -109,20 +109,20 @@ class cloud_classifier(cloud_trainer, data_handler):
             path = self.project_path 
         if (path is None):
             raise ValueError("Project path not set")
-        super().load_project_data(path)
+        self.load_data(path)
 
     def save_project_data(self, path = None):
         if (path is None):
             path = self.project_path 
         if (path is None):
             raise ValueError("Project path not set")
-        super().save_project_data(path)
+        self.save_data(path)
 
 
-    def set_parameters(self, **kwargs):
+    def set_project_parameters(self, **kwargs):
         super().set_parameters(**kwargs)
         if(not self.project_path is None):
-            super().save_project_data(self.project_path)
+            self.save_data(self.project_path)
 
 
 
@@ -259,7 +259,8 @@ class cloud_classifier(cloud_trainer, data_handler):
             labels = self.predict_labels(vectors, verbose = verbose)
             filename = self.save_labels(labels, indices, file, verbose = verbose)
             self.label_files.append(filename)
-
+            print(filename)
+        print(self.label_files)
         self.save_project_data()
             #TODO: convert and save labels
 

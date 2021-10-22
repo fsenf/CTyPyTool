@@ -161,6 +161,7 @@ class cloud_trainer(base_class):
 
         correct = np.sum(predicted_labels == labels)
         total = len(labels)
+        
         print("Correctly identified %i out of %i labels! \nPositve rate is: %f" % (correct, total, correct/total))
         return(correct/total)
 
