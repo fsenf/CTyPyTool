@@ -25,11 +25,7 @@ class base_class:
         dirname = os.path.dirname(__file__)
 
         self.default_path = os.path.join(dirname, "defaults")
-        # self.__config_file = os.path.join("settings","config.json")
-        # self.__data_file = os.path.join("settings","training_data.json")
-        # self.__structure_file = os.path.join("settings","data_structure.json")
-
-
+    
 
         if(not hasattr(self, 'class_variables')):
             print("Could not initalize class variables")

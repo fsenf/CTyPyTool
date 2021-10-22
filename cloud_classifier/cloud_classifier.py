@@ -181,13 +181,20 @@ class cloud_classifier(cloud_trainer, data_handler):
         output_file = os.path.join(self.project_path, "data", "label_reference.nc")
         super().create_reference_file(input_file, output_file)
 
+    def set_reference_file(self, verbose = True):
+        ref_path = os.path.join(self.project_path, "data", "label_reference.nc")
 
-
+        if Path(ref_path).is_file():
+            self.reference_file = ref_path
+            if (verbose):
+                print("Refernce file found")
+            else:
+                raise FileNotFoundError("Could not find reference file!")
 
     ### predicting
     def extract_input_filelist(self, verbose = True):
         self.input_files =  self.generate_filelist_from_folder(folder = self.input_source_folder, no_labels = True)
-        filepath = os.path.join(self.project_path, "settings", "input_files.json")
+        filepath = os.path.join(self.project_path, "filelists", "input_files.json")
         self.save_parameters(filepath)
         if (verbose):
             print("Input filelist created!")
@@ -235,7 +242,7 @@ class cloud_classifier(cloud_trainer, data_handler):
     ##########################################################################
 
     def run_training_pipeline(self, verbose = True, create_filelist = True, evaluation = False, create_training_data = False):
-
+        self.save_project_data()
         self.load_project_data()
 
         if (create_filelist):
@@ -253,8 +260,9 @@ class cloud_classifier(cloud_trainer, data_handler):
         self.train_classifier(v,l, verbose = verbose)
 
 
-    def run_prediction_pipeline(self, verbose = True, create_filelist = True, evaluation = False):
 
+    def run_prediction_pipeline(self, verbose = True, create_filelist = True, evaluation = False):
+        self.save_project_data()
         self.load_project_data()
 
         if (create_filelist and not evaluation):
@@ -262,6 +270,7 @@ class cloud_classifier(cloud_trainer, data_handler):
 
         self.load_classifier(reload = True, verbose = verbose)
         self.apply_mask(verbose = verbose)
+        self.set_reference_file(verbose = verbose)
         self.label_files = []
         for file in self.input_files:
             vectors, indices = self.create_input_vectors(file, verbose = verbose)
@@ -301,7 +310,6 @@ class cloud_classifier(cloud_trainer, data_handler):
         sat_pattern = self.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
         lab_pattern = self.get_filename_pattern(self.label_file_structure, self.timestamp_length)
         sat_files, lab_files = {}, {}
-
         files = os.listdir(folder)
         for file in files:
             sat_id = sat_pattern.match(file)
