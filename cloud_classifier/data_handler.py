@@ -432,7 +432,7 @@ class data_handler(base_class):
 
 
     def plot_multiple(self, label_files, truth_file = None, georef_file = None, 
-            reduce_to_mask = False, plot_titles = None):
+            reduce_to_mask = False, plot_titles = None, hour = None):
         """
         plots multiple labelfiles and possibly ground truth as subplots
         """
@@ -451,7 +451,7 @@ class data_handler(base_class):
 
         length = len(plots)
 
-        plt.figure(figsize=(12, 4))
+        plt.figure(figsize=(length*6.5, 4))
 
         for i in range(length):
             ax = plt.subplot(1,length,i+1, projection=ccrs.PlateCarree())
@@ -464,12 +464,14 @@ class data_handler(base_class):
                 ax.set_title(plot_titles[i])
 
             if (not truth_file is None and i < len(plots)-1):
-                print("her")
-                self.get_match_string(plots[i], plots[-1])
-
+                text = self.get_match_string(plots[i], plots[-1])
+                ax.text(10, 22, text)
+            if (not truth_file is None and i == len(plots)-1 and hour is not None):
+                text = "Time: {:02d}:00".format(hour)
+                ax.text(10, 22, text)
 
             if (i+1 == length):
-                if(not truth_file is None and len(plots)<len(plot_titles)):
+                if(not truth_file is None and len(plots)>len(plot_titles)):
                     ax.set_title("Ground Truth")
 
 
@@ -479,7 +481,8 @@ class data_handler(base_class):
                 cbar = plt.colorbar(pcm, a2)
                 cbar.set_ticks(ct_indices)
                 cbar.set_ticklabels(ct_labels)
-                plt.show()
+        plt.subplots_adjust(wspace=0.05)
+        plt.show()
 
 
 
@@ -513,7 +516,6 @@ class data_handler(base_class):
 
         else:
             indices = np.where(~np.isnan(label_data))
-
         labels = np.empty(label_data.shape)
         labels[:] = np.nan
         label_data = np.array(label_data)[indices[0], indices[1]]
@@ -525,6 +527,7 @@ class data_handler(base_class):
 
     def get_match_string(self, labels, truth):
         correct = np.sum(labels == truth)
-        total = len(truth.flatten())
+        not_nan = np.where(~np.isnan(truth))
+        total = len(not_nan[0].flatten())
         
-        print("Correctly identified %i out of %i labels! \nPositve rate is: %f" % (correct, total, correct/total))
+        return "Correctly identified {:.2f} %".format(100*correct/total)

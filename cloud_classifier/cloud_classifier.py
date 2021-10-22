@@ -35,7 +35,8 @@ class cloud_classifier(cloud_trainer, data_handler):
             "input_source_folder",
             "input_files",
             "evaluation_sets",
-            "label_files"
+            "label_files",
+            "timestamps"
             }
         self.project_path = None
 
@@ -80,7 +81,6 @@ class cloud_classifier(cloud_trainer, data_handler):
             except Exception:
                 print("Could not initalize project settings at given location")
                 return 0
-        print(folder)
         self.load_project(folder)
 
 
@@ -158,6 +158,13 @@ class cloud_classifier(cloud_trainer, data_handler):
             print("Training data created!")
         return v,l
 
+    def load_training_set(self, verbose = True):
+        filename = os.path.join(self.project_path, "data", "training_data")
+        v,l = super().load_training_set(filename)
+        if (verbose):
+            print("Training data loaded!")
+        return v,l
+
     def train_classifier(self, vectors, labels, verbose = True):
         super().train_classifier(vectors, labels)
         filename = os.path.join(self.project_path, "data", "classifier")
@@ -220,27 +227,29 @@ class cloud_classifier(cloud_trainer, data_handler):
     ### evaluation
     def create_split_training_filelist(self):
         datasets =  self.generate_filelist_from_folder(self.data_source_folder)
-        self.training_sets, self.evaluation_sets = self.split_sets(datasets, 24, timesensitive = True)
+        self.training_sets, self.evaluation_sets, self.timestamps = self.split_sets(datasets, 24, timesensitive = True)
         self.input_files = [s[0] for s in self.evaluation_sets]
         self.save_project_data()
 
 
     ##########################################################################
 
-    def run_training_pipeline(self, verbose = True, create_filelist = True, evaluation = False):
+    def run_training_pipeline(self, verbose = True, create_filelist = True, evaluation = False, create_training_data = False):
 
         self.load_project_data()
 
         if (create_filelist):
             if (evaluation):
                 self.create_split_training_filelist()
-
             else:
                 self.create_training_filelist(verbose = verbose)
         if (self.reference_file is None):
             self.create_reference_file()
         self.apply_mask(verbose = verbose)
-        v,l = self.create_training_set(verbose = verbose)
+        if(create_training_data):
+            v,l = self.create_training_set(verbose = verbose)
+        else: 
+            v,l = self.load_training_set()
         self.train_classifier(v,l, verbose = verbose)
 
 
@@ -259,8 +268,6 @@ class cloud_classifier(cloud_trainer, data_handler):
             labels = self.predict_labels(vectors, verbose = verbose)
             filename = self.save_labels(labels, indices, file, verbose = verbose)
             self.label_files.append(filename)
-            print(filename)
-        print(self.label_files)
         self.save_project_data()
             #TODO: convert and save labels
 
@@ -328,6 +335,7 @@ class cloud_classifier(cloud_trainer, data_handler):
         sat_pattern = self.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
 
         eval_indeces = []
+        timestamps = []
         if(timesensitive):
             if(eval_size % 24 != 0):
                 raise ValueError("When using timesensitive splitting eval_size must be multiple of 24")
@@ -336,6 +344,7 @@ class cloud_classifier(cloud_trainer, data_handler):
                 sat_id = sat_pattern.match(os.path.basename(dataset[i][0]))
                 if(sat_id):
                     timestamp = sat_id.group(1)
+                    timestamps.append(timestamp)
                     hour = int(timestamp[-4:-2])
                     timesorted[hour].append(i)
             n = int(eval_size/24)
@@ -348,7 +357,7 @@ class cloud_classifier(cloud_trainer, data_handler):
         eval_set = [dataset[i] for i in eval_indeces]
         training_set = [dataset[i] for i in training_indeces]
 
-        return training_set, eval_set
+        return training_set, eval_set, timestamps
 
 
 
@@ -364,7 +373,6 @@ class cloud_classifier(cloud_trainer, data_handler):
     def get_hour(self, filename, pattern):
         timestamp = pattern.match(file).group(1)
         return int(timestamp[-4:-2])
-
 
 
     def get_label_name(self, sat_file):

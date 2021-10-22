@@ -19,7 +19,7 @@ class base_class:
             "input_files.json",
             "evaluation_sets.json",
             "training_sets.json", 
-            "label_files.json"
+            "label_files.json",
             ]
 
         dirname = os.path.dirname(__file__)
@@ -49,7 +49,6 @@ class base_class:
 
 
     def load_data(self, path):
-        print("loading from: " + path)
         for file in self.setting_files:
             filepath = os.path.join(path, "settings", file)
             self.load_parameters(filepath)
@@ -88,8 +87,6 @@ class base_class:
         # get saved entries
         with open(filepath, 'r') as outfile:
             saved_params =  json.load(outfile)
-            #print(saved_params)
-            #print(self.label_files)
             # update saved params
             saved_params.update({k:self.__dict__[k] for k in saved_params.keys() if k in self.class_variables})
             json_obj = json.dumps(saved_params, indent = 4)
