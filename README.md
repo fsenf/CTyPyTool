@@ -23,5 +23,4 @@ $ pipenv install
 #### Manual
 There are severeal Jupyter Notebooks explaining the basic steps for training and applying the cloud classifier.
 
-For using an already trained classifier check out:
-    [notebooks/Application_of_a_pretrained_classifier.ipynb]
+For using an already trained classifier check out [this notebook](notebooks/Application_of_a_pretrained_classifier.ipynb)
