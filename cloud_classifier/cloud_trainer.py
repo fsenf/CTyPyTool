@@ -2,14 +2,19 @@ import xarray as xr
 import numpy as np
 from joblib import dump, load
 
+import sklearn.svm as svm
 from sklearn import tree
+from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import SelectKBest, chi2
 
 import tools.plotting as pl
 import base_class
 import importlib
+import inspect
+
 importlib.reload(pl)
 
 from base_class import base_class
@@ -31,10 +36,11 @@ class cloud_trainer(base_class):
         class_variables =  {
             'classifier_type', 
             'max_depth',
-            'max_depth',
             'ccp_alpha',
             'n_estimators',
-            'feature_preselection'
+            'feature_preselection',
+            'max_features',
+            'min_samples_split',
             }
         
         self.classifier = None      
@@ -86,7 +92,15 @@ class cloud_trainer(base_class):
             self.classifier = tree.DecisionTreeClassifier(max_depth = self.max_depth, ccp_alpha = self.ccp_alpha)
         elif(self.classifier_type == "Forest"): 
             self.classifier = RandomForestClassifier(n_estimators = self.n_estimators, max_depth = self.max_depth, 
-                                                ccp_alpha = self.ccp_alpha)
+                                                 ccp_alpha = self.ccp_alpha, min_samples_split = self.min_samples_split,
+                                                 max_features = self.max_features)
+        elif(self.classifier_type == "AdaBoost"):
+            svc=SVC(probability=True, kernel='linear')
+            self.classifier = AdaBoostClassifier(n_estimators =  self.n_estimators, base_estimator=svc)
+
+        elif(self.classifier_type == "nuSVM"):
+            self.classifier = svm.SVC(probability=True, kernel='linear')
+
 
         if(training_vectors is None or training_labels is None):
             print("No training data!")
@@ -95,6 +109,7 @@ class cloud_trainer(base_class):
         if(self.feature_preselection and not (self.feat_select is None)):
             training_vectors = self.apply_feature_selection(training_vectors)
         self.classifier.fit(training_vectors, training_labels)
+
 
 
 
@@ -110,6 +125,21 @@ class cloud_trainer(base_class):
             vectors = self.apply_feature_selection(vectors)
 
         return self.classifier.predict(vectors)
+
+
+
+    def get_forest_proabilties(self, vectors):
+        if(self.classifier is None):
+            print("No classifer trained or loaded")
+            return
+
+        if(self.feature_preselection and not (self.feat_select is None)):
+            vectors = self.apply_feature_selection(vectors)
+
+        p = self.classifier.predict_proba(vectors)
+        print(p)
+        # return self.classifier.predict_proba(vectors)
+
 
 
 

@@ -180,6 +180,7 @@ class cloud_classifier(cloud_trainer, data_handler):
             input_file = self.training_sets[0][1]
         output_file = os.path.join(self.project_path, "data", "label_reference.nc")
         super().create_reference_file(input_file, output_file)
+        self.save_project_data()
 
     def set_reference_file(self, verbose = True):
         ref_path = os.path.join(self.project_path, "data", "label_reference.nc")
@@ -244,7 +245,6 @@ class cloud_classifier(cloud_trainer, data_handler):
     def run_training_pipeline(self, verbose = True, create_filelist = True, evaluation = False, create_training_data = False):
         self.save_project_data()
         self.load_project_data()
-
         if (create_filelist):
             if (evaluation):
                 self.create_split_training_filelist()
@@ -275,6 +275,10 @@ class cloud_classifier(cloud_trainer, data_handler):
         for file in self.input_files:
             vectors, indices = self.create_input_vectors(file, verbose = verbose)
             labels = self.predict_labels(vectors, verbose = verbose)
+
+
+            if(self.classifier_type == "Forest"):
+                probas = self.get_forest_proabilties(vectors)
             filename = self.save_labels(labels, indices, file, verbose = verbose)
             self.label_files.append(filename)
         self.save_project_data()

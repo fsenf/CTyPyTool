@@ -4,5 +4,8 @@
     "max_depth": 20,
     "ccp_alpha": 0,
     "n_estimators": 75,
-    "feature_preselection": false
+    "feature_preselection": false,
+    "max_features": null,
+    "min_samples_split" : 2
+
 }

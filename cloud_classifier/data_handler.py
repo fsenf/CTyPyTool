@@ -360,8 +360,15 @@ class data_handler(base_class):
         to later use this as a template for writing predicted labels to file.
         """
         data = xr.open_dataset(input_file)
+        for key in data.keys():
+            if(not key == self.cloudtype_channel):
+                data =data.drop(key)
+
         data.to_netcdf(path=output_file, mode='w')
         self.reference_file = output_file
+
+
+
 
 
 
