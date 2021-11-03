@@ -149,22 +149,8 @@ def clean_test_vectors(vectors, indices):
     return vectors[valid], np.array([indices[0][valid], indices[1][valid]])
 
 
-def make_xrData(labels, indices, reference_filename, ct_channel = "ct"):
-    """
-    returns coordination data from NETCDF file
-    """
-    out = xr.open_dataset(reference_filename)
 
-    shape = out[ct_channel][0].shape # 0 being the hour
-    new_data = np.empty(shape)
-    new_data[:] = np.nan
-    new_data[indices[0],indices[1]] = labels
-    out[ct_channel][0] = new_data
-    return out
 
-def make_xrUncertMatrix(data, indices, reference_filename):
-    out = xr.open_dataset(reference_filename)
-    
  
 
 def write_NETCDF(data, filename):

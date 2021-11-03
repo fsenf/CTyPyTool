@@ -136,8 +136,8 @@ class cloud_trainer(base_class):
         if(self.feature_preselection and not (self.feat_select is None)):
             vectors = self.apply_feature_selection(vectors)
 
-        p = self.classifier.predict_proba(vectors)
-        print(p)
+        return self.classifier.predict_proba(vectors)
+
         # return self.classifier.predict_proba(vectors)
 
 

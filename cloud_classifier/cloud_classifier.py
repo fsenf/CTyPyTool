@@ -120,7 +120,7 @@ class cloud_classifier(cloud_trainer, data_handler):
 
 
     def set_project_parameters(self, **kwargs):
-        super().set_parameters(**kwargs)
+        self.set_parameters(**kwargs)
         if(not self.project_path is None):
             self.save_data(self.project_path)
 
@@ -188,9 +188,9 @@ class cloud_classifier(cloud_trainer, data_handler):
         if Path(ref_path).is_file():
             self.reference_file = ref_path
             if (verbose):
-                print("Refernce file found")
-            else:
-                raise FileNotFoundError("Could not find reference file!")
+                print("Reference file found")
+        else:
+            self.create_reference_file()
 
     ### predicting
     def extract_input_filelist(self, verbose = True):
@@ -223,10 +223,10 @@ class cloud_classifier(cloud_trainer, data_handler):
             print("Predicted Labels!")
         return labels
 
-    def save_labels(self, labels, indices, sat_file, verbose = True):
+    def save_labels(self, labels, indices, sat_file, probas = None, verbose = True):
         name = self.get_label_name(sat_file)
         filepath = os.path.join(self.project_path, "labels", name)
-        self.make_xrData(labels, indices, NETCDF_out = filepath)
+        self.make_xrData(labels, indices, NETCDF_out = filepath, prob_data = probas)
         if(verbose):
             print("Labels saved as " + name )
         return filepath
@@ -243,8 +243,6 @@ class cloud_classifier(cloud_trainer, data_handler):
     ##########################################################################
 
     def run_training_pipeline(self, verbose = True, create_filelist = True, evaluation = False, create_training_data = False):
-        self.save_project_data()
-        self.load_project_data()
         if (create_filelist):
             if (evaluation):
                 self.create_split_training_filelist()
@@ -258,12 +256,10 @@ class cloud_classifier(cloud_trainer, data_handler):
         else: 
             v,l = self.load_training_set()
         self.train_classifier(v,l, verbose = verbose)
-
+        self.save_project_data()
 
 
     def run_prediction_pipeline(self, verbose = True, create_filelist = True, evaluation = False):
-        self.save_project_data()
-        self.load_project_data()
 
         if (create_filelist and not evaluation):
             self.extract_input_filelist(verbose = verbose)
@@ -274,13 +270,18 @@ class cloud_classifier(cloud_trainer, data_handler):
         self.label_files = []
         for file in self.input_files:
             vectors, indices = self.create_input_vectors(file, verbose = verbose)
-            labels = self.predict_labels(vectors, verbose = verbose)
-
-
+            probas = None
             if(self.classifier_type == "Forest"):
+                li = self.classifier.classes_
                 probas = self.get_forest_proabilties(vectors)
-            filename = self.save_labels(labels, indices, file, verbose = verbose)
+                labels = [li[i] for i in np.argmax(probas, axis = 1)]
+            else:
+                labels = self.predict_labels(vectors, verbose = verbose)
+
+            filename = self.save_labels(labels, indices, file, probas, verbose = verbose)
             self.label_files.append(filename)
+
+
         self.save_project_data()
             #TODO: convert and save labels
 

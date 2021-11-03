@@ -266,7 +266,8 @@ class data_handler(base_class):
         return labels
 
 
-    def make_xrData(self, labels, indices, reference_file = None, NETCDF_out = None):
+    def make_xrData(self, labels, indices, reference_file = None, NETCDF_out = None, 
+            prob_data = None):
         """
         Transforms a set of predicted labels into xarray-dataset  
 
@@ -293,17 +294,47 @@ class data_handler(base_class):
         """
         if (reference_file is None and self.reference_file is None):
             raise ValueError("Reference file must be set or specified!")
+
         if (reference_file is None):
             reference_file = self.reference_file
 
-        xar = ex.make_xrData(labels, indices, reference_file,
-                ct_channel = self.cloudtype_channel)
+        out = xr.open_dataset(reference_file)
+
+        shape = out[self.cloudtype_channel][0].shape # 0 being the hour
+        new_data = np.empty(shape)
+        new_data[:] = np.nan
+        new_data[indices[0],indices[1]] = labels
+        out[self.cloudtype_channel][0] = new_data
+
+
+        if(prob_data is not None):
+            shape += (len(prob_data[0]), )
+            new_data = np.empty(shape)
+            new_data[:] = np.nan
+            new_data[indices[0],indices[1]] = prob_data
+
+            new_dims = out[self.cloudtype_channel][0].dims
+            new_dims += ("labels",)
+            out["label_probability"] = (new_dims, new_data)
 
         if (not NETCDF_out is None):
-            ex.write_NETCDF(xar, NETCDF_out)
+            ex.write_NETCDF(out, NETCDF_out)
 
-        return xar
+        return out
 
+    # def make_UncertMatrix(data, indices, reference_filename, labels, ct_channel = "ct"):
+    #     out = xr.open_dataset(reference_filename)
+
+    #     shape = out[ct_channel][0].shape
+    #     shape += len(labels)
+
+    #     new_data = np.empty(shape)
+    #     new_data[:] = np.nan
+    #     new_data[indices[0],indices[1]] = data
+    #     out[ct_channel][0] = new_data
+
+
+ 
 
 
     def save_filelist(self, filename):
