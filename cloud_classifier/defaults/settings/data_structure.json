@@ -4,7 +4,7 @@
     "sat_file_structure" : "msevi-medi-TIMESTAMP.nc",
     "label_file_structure" : "nwcsaf_msevi-medi-TIMESTAMP.nc",
     "input_source_folder" : "../data/input_data" ,    
-
+    "georef_file" : "../data/msevi-medi-georef.nc" ,
     "mask_file" : "../data/training_data/lsm_mask_medi.nc",
     "mask_key" : "land_sea_mask",
     "mask_sea_coding" : 0, 

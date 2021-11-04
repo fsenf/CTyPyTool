@@ -52,7 +52,8 @@ class data_handler(base_class):
             'mask_file',
             'mask_key',
             'mask_sea_coding',
-            'reference_file'
+            'reference_file',
+            'georef_file'
             ]
 
         super().init_class_variables(class_variables)
@@ -395,7 +396,7 @@ class data_handler(base_class):
             if(not key == self.cloudtype_channel):
                 data =data.drop(key)
 
-        data.to_netcdf(path=output_file, mode='w')
+        data.to_netcdf(path=output_file, mode ='w')
         self.reference_file = output_file
 
 
@@ -427,120 +428,112 @@ class data_handler(base_class):
         return ct_colors, ct_indices, ct_labels
 
 
-    def plot_labels(self, data = None, data_file = None, georef_file = None, reduce_to_mask = False):
-        """
-        Plots labels from an xarray onto a worldmap    
-        
-        
-        Parameters
-        ----------
-        data : xr.array
-            2D-array containig the datapoints 
-        """
-
-        ct_colors, ct_indices, ct_labels = self.definde_NWCSAF_variables()
 
 
-        extent = [-8, 45, 30, 45]
-        plt.figure(figsize=(12, 4))
-        ax = plt.axes(projection=ccrs.PlateCarree())
+
+    def plot_data(self, label_file, reduce_to_mask = False , extent= None,  cmap = "hot", mode = "label", 
+        subplot = False, pos = None, colorbar = False):
+
+        if (mode == "label"):
+            ct_colors, ct_indices, ct_labels = self.definde_NWCSAF_variables()
+            cmap = plt.matplotlib.colors.ListedColormap(ct_colors)
+            vmin = 1
+            vmax = 15
+        elif (mode == "proba"):
+            vmin = 0.0
+            vmax = 1.0
+
+
+        if(extent is None):
+             extent = [-6, 42, 25, 50]
+
+        if(subplot):
+            ax = plt.subplot(pos[0], pos[1], pos[2], projection=ccrs.PlateCarree())
+        else:
+            extent = [-6, 42, 25, 50]
+            ax = plt.axes(projection=ccrs.PlateCarree())
+
         ax.coastlines(resolution='50m')
         ax.set_extent(extent)
-        #ax.gridlines()
-        # ax.add_feature(cartopy.feature.OCEAN)
         ax.add_feature(cartopy.feature.LAND, edgecolor='black')
-        # ax.add_feature(cartopy.feature.LAKES, edgecolor='black')
-        # ax.add_feature(cartopy.feature.RIVERS)  
+        data, x, y = self.get_plotable_data(data_file = label_file, reduce_to_mask = reduce_to_mask, mode = mode)
 
-        cmap = plt.matplotlib.colors.ListedColormap( ct_colors )
-
-        labels, x, y = self.get_plotable(data, data_file, georef_file, reduce_to_mask)
-        pcm = ax.pcolormesh(x,y, data, cmap = cmap, vmin = 1, vmax = 15)
-        
+        pcm = ax.pcolormesh(x,y, data, cmap = cmap, vmin = vmin, vmax = vmax)
 
         fig = plt.gcf()
         a2 = fig.add_axes( [0.95, 0.22, 0.015, 0.6])     
         cbar = plt.colorbar(pcm, a2)
         cbar.set_ticks(ct_indices)
         cbar.set_ticklabels(ct_labels)
-        plt.show()
+        return ax, data
+
+
 
 
     def plot_multiple(self, label_files, truth_file = None, georef_file = None, 
             reduce_to_mask = False, plot_titles = None, hour = None):
-        """
-        plots multiple labelfiles and possibly ground truth as subplots
-        """
-        ct_colors, ct_indices, ct_labels = self.definde_NWCSAF_variables()
-        cmap = plt.matplotlib.colors.ListedColormap(ct_colors)
+
         extent = [-6, 42, 25, 50]
 
-
-        plots = []
-        for lf in label_files:
-            r, x, y = self.get_plotable(data_file = lf, georef_file = georef_file, reduce_to_mask = reduce_to_mask)
-            plots.append(r)
-        if (not truth_file is None):
-            truth = self.get_plotable(data_file = truth_file, georef_file = georef_file, reduce_to_mask = reduce_to_mask)[0]
-            plots.append(truth)
-
-        length = len(plots)
-
+        length = len(label_files)
+        lab_lenght = length 
+        if(not truth_file is None):
+            length+=1
         plt.figure(figsize=(length*6.5, 4))
 
-        for i in range(length):
-            ax = plt.subplot(1,length,i+1, projection=ccrs.PlateCarree())
-            ax.add_feature(cartopy.feature.LAND, edgecolor='black')
-            ax.coastlines(resolution='50m')
-            ax.set_extent(extent)
-            pcm = ax.pcolormesh(x,y, plots[i], cmap = cmap, vmin = 1, vmax = 15)
+        # plot ground truth
+        if (not truth_file is None):
+            pos = [1,length,length]
+            ax, truth = self.plot_data(truth_file, reduce_to_mask, pos = pos, subplot = True, colorbar = True)
+            if (hour is not None):
+                text = "Time: {:02d}:00".format(hour)
+                ax.text(10, 22, text)
+            if (length > len(plot_titles)):
+                ax.set_title("Ground Truth")
+
+        # plot labels
+        for i in range(lab_lenght):
+            pos = [1,length,i+1]
+            ax,data = self.plot_data(label_files[i], reduce_to_mask, pos = pos, subplot = True)
 
             if (not plot_titles is None and i < len(plot_titles)):
                 ax.set_title(plot_titles[i])
 
-            if (not truth_file is None and i < len(plots)-1):
-                text = self.get_match_string(plots[i], plots[-1])
-                ax.text(10, 22, text)
-            if (not truth_file is None and i == len(plots)-1 and hour is not None):
-                text = "Time: {:02d}:00".format(hour)
+            if (not truth_file is None and i < lab_lenght):
+                text = self.get_match_string(data, truth)
                 ax.text(10, 22, text)
 
-            if (i+1 == length):
-                if(not truth_file is None and len(plots)>len(plot_titles)):
-                    ax.set_title("Ground Truth")
 
 
-
-                fig = plt.gcf()
-                a2 = fig.add_axes( [0.95, 0.22, 0.015, 0.6])     
-                cbar = plt.colorbar(pcm, a2)
-                cbar.set_ticks(ct_indices)
-                cbar.set_ticklabels(ct_labels)
         plt.subplots_adjust(wspace=0.05)
         plt.show()
 
 
-
-
-
-    def get_plotable(self, data = None, data_file = None, georef_file = None, reduce_to_mask = False):
+    def get_plotable_data(self, input_data = None, data_file = None, georef_file = None, reduce_to_mask = False, mode = "label"):
         """
-        Returns data and coordinates in a plottable format 
+        Returns input_data and coordinates in a plottable format 
         """
 
-        if(data is None and data_file is None):
-            print("No data given!")
-            return
-        elif (data is None):
-            data = xr.open_dataset(data_file)
-        label_data = data[self.cloudtype_channel][0]
+        if(input_data is None and data_file is None):
+            raise ValueError("No input data given!")
+    
+        elif (input_data is None):
+            input_data = xr.open_dataset(data_file)
+
         if(georef_file is None):
-            x = data.coords['lon']
-            y = data.coords['lat']
+            georef_file = self.georef_file
+        if(georef_file is None):
+            x = input_data.coords['lon']
+            y = input_data.coords['lat']
         else:
             georef = xr.open_dataset(georef_file)
             x = georef.coords['lon']
             y = georef.coords['lat']
+
+        if (mode == "label"):
+            data = input_data[self.cloudtype_channel][0]
+        elif (mode == "proba"):
+            data = np.amax(input_data["label_probability"], axis = 2)
 
         # shrink to area, transform to numpy
         indices = None
@@ -548,21 +541,143 @@ class data_handler(base_class):
             if self.masked_indices is None:
                 self.set_indices_from_mask(self.mask_file, self.mask_key)
             indices = self.masked_indices
-
         else:
-            indices = np.where(~np.isnan(label_data))
-        labels = np.empty(label_data.shape)
-        labels[:] = np.nan
-        label_data = np.array(label_data)[indices[0], indices[1]]
-        labels[indices[0],indices[1]] = label_data
-        labels = ex.switch_nwcsaf_version(labels, target_version = 'v2018')
+            indices = np.where(~np.isnan(data))
 
-        return labels, x, y
+
+        out_data = np.empty(data.shape)
+        out_data[:] = np.nan
+        data = np.array(data)[indices[0], indices[1]]
+        out_data[indices[0],indices[1]] = data
+        out_data = ex.switch_nwcsaf_version(out_data, target_version = 'v2018')
+
+        return out_data, x, y
+
 
 
     def get_match_string(self, labels, truth):
+        
         correct = np.sum(labels == truth)
-        not_nan = np.where(~np.isnan(truth))
+        not_nan = np.where(~np.isnan(labels))
         total = len(not_nan[0].flatten())
         
         return "Correctly identified {:.2f} %".format(100*correct/total)
+
+            # def plot_multiple(self, label_files, truth_file = None, georef_file = None, 
+    #         reduce_to_mask = False, plot_titles = None, hour = None):
+    #     """
+    #     plots multiple labelfiles and possibly ground truth as subplots
+    #     """
+    #     ct_colors, ct_indices, ct_labels = self.definde_NWCSAF_variables()
+    #     cmap = plt.matplotlib.colors.ListedColormap(ct_colors)
+    #     extent = [-6, 42, 25, 50]
+
+
+    #     plots = []
+    #     for lf in label_files:
+    #         r, x, y = self.get_plotable_data(data_file = lf, georef_file = georef_file, reduce_to_mask = reduce_to_mask)
+    #         plots.append(r)
+
+    #     if (not truth_file is None):
+    #         truth = self.get_plotable_data(data_file = truth_file, georef_file = georef_file, reduce_to_mask = reduce_to_mask)[0]
+    #         plots.append(truth)
+
+    #     length = len(plots)
+
+    #     plt.figure(figsize=(length*6.5, 4))
+
+    #     for i in range(length):
+    #         if (i == 0):
+    #             print("lpotteinign peoerobb")
+    #             ax = self.plot_probabilities(label_files[i], reduce_to_mask)
+    #         else:
+    #             print("lesesdn")
+    #             ax = plt.subplot(1,length,i+1, projection=ccrs.PlateCarree())
+    #             ax.add_feature(cartopy.feature.LAND, edgecolor='black')
+    #             ax.coastlines(resolution='50m')
+    #             ax.set_extent(extent)
+    #             pcm = ax.pcolormesh(x,y, plots[i], cmap = cmap, vmin = 1, vmax = 15)
+
+    #         if (not plot_titles is None and i < len(plot_titles)):
+    #             ax.set_title(plot_titles[i])
+
+    #         if (not truth_file is None and i < lab_lenght):
+    #             text = self.get_match_string(plots[i], plots[-1])
+    #             ax.text(10, 22, text)
+
+    #         if (not truth_file is None and i == lab_lenght and hour is not None):
+    #             text = "Time: {:02d}:00".format(hour)
+    #             ax.text(10, 22, text)
+
+    #         if (i+1 == length):
+    #             if(not truth_file is None and len(plots)>len(plot_titles)):
+    #                 ax.set_title("Ground Truth")
+
+    #             fig = plt.gcf()
+    #             a2 = fig.add_axes( [0.95, 0.22, 0.015, 0.6])     
+    #             cbar = plt.colorbar(pcm, a2)
+    #             cbar.set_ticks(ct_indices)
+    #             cbar.set_ticklabels(ct_labels)
+
+    #     plt.subplots_adjust(wspace=0.05)
+    #     plt.show()
+
+
+       # def plot_labels(self, data = None, data_file = None, georef_file = None, reduce_to_mask = False):
+    #     """
+    #     Plots labels from an xarray onto a worldmap    
+        
+        
+    #     Parameters
+    #     ----------
+    #     data : xr.array
+    #         2D-array containig the datapoints 
+    #     """
+
+    #     ct_colors, ct_indices, ct_labels = self.definde_NWCSAF_variables()
+    #     extent = [-6, 42, 25, 50]
+    #     plt.figure(figsize=(12, 4))
+    #     ax = plt.axes(projection=ccrs.PlateCarree())
+    #     ax.coastlines(resolution='50m')
+    #     ax.set_extent(extent)
+    #     ax.add_feature(cartopy.feature.LAND, edgecolor='black')
+
+
+    #     cmap = plt.matplotlib.colors.ListedColormap( ct_colors )
+
+    #     labels, x, y = self.get_plotable_data(data, data_file, georef_file, reduce_to_mask)
+    #     pcm = ax.pcolormesh(x,y, labels, cmap = cmap, vmin = 1, vmax = 15)
+        
+
+    #     fig = plt.gcf()
+    #     a2 = fig.add_axes( [0.95, 0.22, 0.015, 0.6])     
+    #     cbar = plt.colorbar(pcm, a2)
+    #     cbar.set_ticks(ct_indices)
+    #     cbar.set_ticklabels(ct_labels)
+    #     plt.show()
+    #     def plot_probabilities(self, label_file, reduce_to_mask = False, cmap = "hot", extent = None, subplot = False, pos = None):
+    #     """
+    #     Plots probabilities of label selection from random forest
+    #     """
+    #     #plt.figure(figsize=(12, 4))
+    #     if(extent is None):
+    #          extent = [-6, 42, 25, 50]
+
+    #     if(subplot):
+    #         ax = plt.subplot(pos[0], pos[1], pos[2], projection=ccrs.PlateCarree())
+    #     else:
+    #         extent = [-6, 42, 25, 50]
+    #         ax = plt.axes(pos[0], pos[1], pos[2], projection=ccrs.PlateCarree())
+
+    #     ax.coastlines(resolution='50m')
+    #     ax.set_extent(extent)
+    #     ax.add_feature(cartopy.feature.LAND, edgecolor='black')
+    #     data, x, y = self.get_plotable_data(data_file = label_file, reduce_to_mask = reduce_to_mask, prob_plot = True)
+    #     pcm = ax.pcolormesh(x,y, data, cmap = cmap, vmin = 0.0, vmax = 1.0)
+
+    #     fig = plt.gcf()
+    #     a2 = fig.add_axes( [0.95, 0.22, 0.015, 0.6])     
+    #     cbar = plt.colorbar(pcm, a2)
+    #     #cbar.set_ticks(ct_indices)
+
+    #     return ax

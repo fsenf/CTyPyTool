@@ -138,8 +138,6 @@ class cloud_trainer(base_class):
 
         return self.classifier.predict_proba(vectors)
 
-        # return self.classifier.predict_proba(vectors)
-
 
 
 
