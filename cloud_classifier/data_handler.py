@@ -13,10 +13,12 @@ import cartopy
 import cartopy.crs as ccrs
 
 import tools.data_extraction as ex
+import tools.confusion as conf
 import base_class
 #
 import importlib
 importlib.reload(ex)
+importlib.reload(conf)
 
 from base_class import base_class
 from cloud_trainer import cloud_trainer
@@ -323,18 +325,6 @@ class data_handler(base_class):
 
         return out
 
-    # def make_UncertMatrix(data, indices, reference_filename, labels, ct_channel = "ct"):
-    #     out = xr.open_dataset(reference_filename)
-
-    #     shape = out[ct_channel][0].shape
-    #     shape += len(labels)
-
-    #     new_data = np.empty(shape)
-    #     new_data[:] = np.nan
-    #     new_data[indices[0],indices[1]] = data
-    #     out[ct_channel][0] = new_data
-
-
  
 
 
@@ -409,33 +399,14 @@ class data_handler(base_class):
 
 
 
-    def definde_NWCSAF_variables(self):
-        ct_colors = ['#007800', '#000000','#fabefa','#dca0dc',
-                '#ff6400', '#ffb400', '#f0f000', '#d7d796',
-                '#e6e6e6',  '#c800c8','#0050d7', '#00b4e6',
-                '#00f0f0', '#5ac8a0', ]
-
-        ct_indices = [ 1.5, 2.5, 3.5, 4.5, 
-                   5.5, 6.5, 7.5, 8.5, 
-                   9.5, 10.5, 11.5, 12.5,
-                   13.5, 14.5, 15.5]
-
-        ct_labels = ['land', 'sea', 'snow', 'sea ice', 
-                     'very low', 'low', 'middle', 'high opaque', 
-                     'very high opaque', 'fractional', 'semi. thin', 'semi. mod. thick', 
-                     'semi. thick', 'semi. above low','semi. above snow']
-
-        return ct_colors, ct_indices, ct_labels
-
-
 
 
 
     def plot_data(self, label_file, reduce_to_mask = False , extent= None,  cmap = "hot", mode = "label", 
-        subplot = False, pos = None, colorbar = False):
+        subplot = False, pos = None, colorbar = False, cb_pos = 0.95):
 
         if (mode == "label"):
-            ct_colors, ct_indices, ct_labels = self.definde_NWCSAF_variables()
+            ct_colors, ct_indices, ct_labels = ex.definde_NWCSAF_variables()
             cmap = plt.matplotlib.colors.ListedColormap(ct_colors)
             vmin = 1
             vmax = 15
@@ -460,15 +431,53 @@ class data_handler(base_class):
 
         pcm = ax.pcolormesh(x,y, data, cmap = cmap, vmin = vmin, vmax = vmax)
 
-        fig = plt.gcf()
-        a2 = fig.add_axes( [0.95, 0.22, 0.015, 0.6])     
-        cbar = plt.colorbar(pcm, a2)
-        cbar.set_ticks(ct_indices)
-        cbar.set_ticklabels(ct_labels)
+        if(colorbar):
+            fig = plt.gcf()
+            a2 = fig.add_axes( [cb_pos, 0.22, 0.015, 0.6]) 
+            cbar = plt.colorbar(pcm, a2)
+            if (mode == "label"):
+                cbar.set_ticks(ct_indices)
+                cbar.set_ticklabels(ct_labels)
+
+
         return ax, data
 
 
+    def plot_probas(self, label_file, truth_file = None, georef_file = None, reduce_to_mask = False, 
+        plot_titles = None, hour = None):
 
+        gt = (not truth_file is None)
+        extent = [-6, 42, 25, 50]
+        length = 2
+        if(not truth_file is None):
+            length+=1
+        plt.figure(figsize=(length*6.5, 4))
+
+        if (gt):
+            pos = [1,length,length]
+            ax, truth = self.plot_data(truth_file, reduce_to_mask, pos = pos, subplot = True, colorbar = True)
+            if (hour is not None):
+                text = "Time: {:02d}:00".format(hour)
+                ax.text(10, 22, text)
+            if (length > len(plot_titles)):
+                ax.set_title("Ground Truth")
+
+        modes = ["proba", "label"]
+        cb = [True, not gt]
+        cb_p = [0.05, 0.95]
+        for i in range(len(modes)):
+            pos = [1,length,i+1]
+            ax,data = self.plot_data(label_file, reduce_to_mask, pos = pos, subplot = True, mode = modes[i], colorbar = cb[i], cb_pos = cb_p[i])
+
+            if (not plot_titles is None):
+                ax.set_title(plot_titles[i])
+
+            if (gt and i == 1):
+                text = self.get_match_string(data, truth)
+                ax.text(10, 22, text)
+
+        plt.subplots_adjust(wspace=0.05)
+        plt.show()
 
     def plot_multiple(self, label_files, truth_file = None, georef_file = None, 
             reduce_to_mask = False, plot_titles = None, hour = None):
@@ -503,13 +512,12 @@ class data_handler(base_class):
                 text = self.get_match_string(data, truth)
                 ax.text(10, 22, text)
 
-
-
         plt.subplots_adjust(wspace=0.05)
         plt.show()
 
 
-    def get_plotable_data(self, input_data = None, data_file = None, georef_file = None, reduce_to_mask = False, mode = "label"):
+    def get_plotable_data(self, input_data = None, data_file = None, georef_file = None, 
+            reduce_to_mask = False, mode = "label"):
         """
         Returns input_data and coordinates in a plottable format 
         """
@@ -563,121 +571,16 @@ class data_handler(base_class):
         
         return "Correctly identified {:.2f} %".format(100*correct/total)
 
-            # def plot_multiple(self, label_files, truth_file = None, georef_file = None, 
-    #         reduce_to_mask = False, plot_titles = None, hour = None):
-    #     """
-    #     plots multiple labelfiles and possibly ground truth as subplots
-    #     """
-    #     ct_colors, ct_indices, ct_labels = self.definde_NWCSAF_variables()
-    #     cmap = plt.matplotlib.colors.ListedColormap(ct_colors)
-    #     extent = [-6, 42, 25, 50]
 
 
-    #     plots = []
-    #     for lf in label_files:
-    #         r, x, y = self.get_plotable_data(data_file = lf, georef_file = georef_file, reduce_to_mask = reduce_to_mask)
-    #         plots.append(r)
+    def plot_coocurrence_matrix(self, label_file, truth_file, normalize = True):
 
-    #     if (not truth_file is None):
-    #         truth = self.get_plotable_data(data_file = truth_file, georef_file = georef_file, reduce_to_mask = reduce_to_mask)[0]
-    #         plots.append(truth)
+        t_data,_,_ = self.get_plotable_data(data_file = truth_file, reduce_to_mask = True)
+        l_data,_,_ = self.get_plotable_data(data_file = label_file, reduce_to_mask = True)
 
-    #     length = len(plots)
+        cm = conf.confusion_matrix(l_data, t_data)
 
-    #     plt.figure(figsize=(length*6.5, 4))
-
-    #     for i in range(length):
-    #         if (i == 0):
-    #             print("lpotteinign peoerobb")
-    #             ax = self.plot_probabilities(label_files[i], reduce_to_mask)
-    #         else:
-    #             print("lesesdn")
-    #             ax = plt.subplot(1,length,i+1, projection=ccrs.PlateCarree())
-    #             ax.add_feature(cartopy.feature.LAND, edgecolor='black')
-    #             ax.coastlines(resolution='50m')
-    #             ax.set_extent(extent)
-    #             pcm = ax.pcolormesh(x,y, plots[i], cmap = cmap, vmin = 1, vmax = 15)
-
-    #         if (not plot_titles is None and i < len(plot_titles)):
-    #             ax.set_title(plot_titles[i])
-
-    #         if (not truth_file is None and i < lab_lenght):
-    #             text = self.get_match_string(plots[i], plots[-1])
-    #             ax.text(10, 22, text)
-
-    #         if (not truth_file is None and i == lab_lenght and hour is not None):
-    #             text = "Time: {:02d}:00".format(hour)
-    #             ax.text(10, 22, text)
-
-    #         if (i+1 == length):
-    #             if(not truth_file is None and len(plots)>len(plot_titles)):
-    #                 ax.set_title("Ground Truth")
-
-    #             fig = plt.gcf()
-    #             a2 = fig.add_axes( [0.95, 0.22, 0.015, 0.6])     
-    #             cbar = plt.colorbar(pcm, a2)
-    #             cbar.set_ticks(ct_indices)
-    #             cbar.set_ticklabels(ct_labels)
-
-    #     plt.subplots_adjust(wspace=0.05)
-    #     plt.show()
+        _, ct_indices, ct_labels = ex.definde_NWCSAF_variables()
 
 
-       # def plot_labels(self, data = None, data_file = None, georef_file = None, reduce_to_mask = False):
-    #     """
-    #     Plots labels from an xarray onto a worldmap    
-        
-        
-    #     Parameters
-    #     ----------
-    #     data : xr.array
-    #         2D-array containig the datapoints 
-    #     """
-
-    #     ct_colors, ct_indices, ct_labels = self.definde_NWCSAF_variables()
-    #     extent = [-6, 42, 25, 50]
-    #     plt.figure(figsize=(12, 4))
-    #     ax = plt.axes(projection=ccrs.PlateCarree())
-    #     ax.coastlines(resolution='50m')
-    #     ax.set_extent(extent)
-    #     ax.add_feature(cartopy.feature.LAND, edgecolor='black')
-
-
-    #     cmap = plt.matplotlib.colors.ListedColormap( ct_colors )
-
-    #     labels, x, y = self.get_plotable_data(data, data_file, georef_file, reduce_to_mask)
-    #     pcm = ax.pcolormesh(x,y, labels, cmap = cmap, vmin = 1, vmax = 15)
-        
-
-    #     fig = plt.gcf()
-    #     a2 = fig.add_axes( [0.95, 0.22, 0.015, 0.6])     
-    #     cbar = plt.colorbar(pcm, a2)
-    #     cbar.set_ticks(ct_indices)
-    #     cbar.set_ticklabels(ct_labels)
-    #     plt.show()
-    #     def plot_probabilities(self, label_file, reduce_to_mask = False, cmap = "hot", extent = None, subplot = False, pos = None):
-    #     """
-    #     Plots probabilities of label selection from random forest
-    #     """
-    #     #plt.figure(figsize=(12, 4))
-    #     if(extent is None):
-    #          extent = [-6, 42, 25, 50]
-
-    #     if(subplot):
-    #         ax = plt.subplot(pos[0], pos[1], pos[2], projection=ccrs.PlateCarree())
-    #     else:
-    #         extent = [-6, 42, 25, 50]
-    #         ax = plt.axes(pos[0], pos[1], pos[2], projection=ccrs.PlateCarree())
-
-    #     ax.coastlines(resolution='50m')
-    #     ax.set_extent(extent)
-    #     ax.add_feature(cartopy.feature.LAND, edgecolor='black')
-    #     data, x, y = self.get_plotable_data(data_file = label_file, reduce_to_mask = reduce_to_mask, prob_plot = True)
-    #     pcm = ax.pcolormesh(x,y, data, cmap = cmap, vmin = 0.0, vmax = 1.0)
-
-    #     fig = plt.gcf()
-    #     a2 = fig.add_axes( [0.95, 0.22, 0.015, 0.6])     
-    #     cbar = plt.colorbar(pcm, a2)
-    #     #cbar.set_ticks(ct_indices)
-
-    #     return ax
+        conf.plot_confusion_matrix(cm, normalize=normalize)

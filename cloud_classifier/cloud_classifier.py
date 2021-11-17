@@ -36,17 +36,12 @@ class cloud_classifier(cloud_trainer, data_handler):
             "input_files",
             "evaluation_sets",
             "label_files",
-            "timestamps"
+            "eval_timestamps"
             }
         self.project_path = None
 
         super().init_class_variables(class_variables)
         super().__init__(**kwargs)
-
-        # if(Path(path)).is_dir():
-        #     self.set_project_path(path)
-        #     self.load_project_data()
-        # else:
 
 
 
@@ -97,11 +92,8 @@ class cloud_classifier(cloud_trainer, data_handler):
         self.load_project_data()
 
 
-    # def save_project(self):
-    #     self.save_all(self.project_path)
-    
-    def set_project_path(self, path):
-        self.project_path = path
+    # def set_project_path(self, path):
+    #     self.project_path = path
 
 
     def load_project_data(self, path = None):

@@ -260,7 +260,7 @@ def switch_2013(labels):
 
 def clean_eval_data(data_1, data_2):
     """
-    returns one dimensional array without nan values
+    returns one dimensional arrays without nan values
     """
     d1 = data_1.flatten()
     d2 = data_2.flatten()
