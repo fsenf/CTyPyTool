@@ -95,7 +95,7 @@ def extract_feature_vectors(data, indices, hour, input_channels):
     return vectors
 
 
-def clean_training_set(vectors, labels):
+def clean_training_set(vectors, labels, verbose = True):
     """
     Remove vectors and corresponding labels containing nans
     
@@ -104,7 +104,7 @@ def clean_training_set(vectors, labels):
     valid_l = ~np.isnan(labels)
     valid = np.logical_and(valid, valid_l)
     d = valid.size - vectors[valid].shape[0]
-    if (d>0):
+    if (d>0 and verbose):
           print("Removed " + str(d) + " vectors for containig 'Nan' values")
  
     return vectors[valid], labels[valid]
@@ -195,6 +195,32 @@ def switch_nwcsaf_version(labels, target_version, input_version = None):
         return switch_2013(labels)
 
 
+def definde_NWCSAF_variables(missing_labels = None):
+    ct_colors = ['#007800', '#000000','#fabefa','#dca0dc',
+            '#ff6400', '#ffb400', '#f0f000', '#d7d796',
+            '#e6e6e6',  '#c800c8','#0050d7', '#00b4e6',
+            '#00f0f0', '#5ac8a0', ]
+
+    ct_indices = [ 1.5, 2.5, 3.5, 4.5, 
+               5.5, 6.5, 7.5, 8.5, 
+               9.5, 10.5, 11.5, 12.5,
+               13.5, 14.5, 15.5]
+
+    ct_labels = ['land', 'sea', 'snow', 'sea ice', 
+                 'very low', 'low', 'middle', 'high opaque', 
+                 'very high opaque', 'fractional', 'semi. thin', 'semi. mod. thick', 
+                 'semi. thick', 'semi. above low','semi. above snow']
+
+    if(missing_labels is not None):
+        mis_ind = [ct_labels.index(ml) for ml in missing_labels]
+        for ind in sorted(mis_ind, reverse=True):
+            for ct_list in [ct_colors, ct_labels, ct_indices]:
+                del ct_list[ind]
+        
+
+    return ct_colors, ct_indices, ct_labels
+
+
 def switch_2016(labels):
     """
     maps netcdf cloud types from the 2013 standard to the 2016 standard
@@ -209,9 +235,8 @@ def switch_2016(labels):
     labels[labels == 16.0] = 12.0 # high semitransparent moderatly thick clouds
     labels[labels == 17.0] = 13.0 # high semitransparent thick clouds
     labels[labels == 18.0] = 14.0 # high semitransparent above low or medium clouds
-    # missing: 15:  High semitransparent above snow/ice
+    # issing: 15:  High semitransparent above snow/ice
     return labels
-
 
 
 def switch_2013(labels):
@@ -232,3 +257,14 @@ def switch_2013(labels):
 
     return labels
 
+
+def clean_eval_data(data_1, data_2):
+    """
+    returns one dimensional array without nan values
+    """
+    d1 = data_1.flatten()
+    d2 = data_2.flatten()
+    valid_1 = ~np.isnan(d1)
+    valid_2 = ~np.isnan(d2)
+    valid = np.logical_and(valid_1, valid_2) 
+    return d1[valid].astype(int), d2[valid].astype(int)
