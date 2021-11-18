@@ -5,6 +5,7 @@ import h5py
 import re
 import os
 from joblib import dump, load
+import warnings
 
 
 import matplotlib.pyplot as plt
@@ -428,8 +429,9 @@ class data_handler(base_class):
         ax.set_extent(extent)
         ax.add_feature(cartopy.feature.LAND, edgecolor='black')
         data, x, y = self.get_plotable_data(data_file = label_file, reduce_to_mask = reduce_to_mask, mode = mode)
-
-        pcm = ax.pcolormesh(x,y, data, cmap = cmap, vmin = vmin, vmax = vmax)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            pcm = ax.pcolormesh(x,y, data, cmap = cmap, vmin = vmin, vmax = vmax)
 
         if(colorbar):
             fig = plt.gcf()
@@ -437,6 +439,7 @@ class data_handler(base_class):
             cbar = plt.colorbar(pcm, a2)
             if (mode == "label"):
                 cbar.set_ticks(ct_indices)
+                cbar.ax.tick_params(labelsize=14)
                 cbar.set_ticklabels(ct_labels)
 
 
@@ -444,23 +447,27 @@ class data_handler(base_class):
 
 
     def plot_probas(self, label_file, truth_file = None, georef_file = None, reduce_to_mask = False, 
-        plot_titles = None, hour = None):
+        plot_corr = False, plot_titles = None, hour = None, save_file = None, show = True):
 
         gt = (not truth_file is None)
         extent = [-6, 42, 25, 50]
         length = 2
         if(not truth_file is None):
             length+=1
-        plt.figure(figsize=(length*6.5, 4))
+        if(plot_corr):
+            length+=1
+
+        fig = plt.figure(figsize=(length*13, 8))
+        fig.patch.set_alpha(1)
 
         if (gt):
             pos = [1,length,length]
             ax, truth = self.plot_data(truth_file, reduce_to_mask, pos = pos, subplot = True, colorbar = True)
             if (hour is not None):
                 text = "Time: {:02d}:00".format(hour)
-                ax.text(10, 22, text)
-            if (length > len(plot_titles)):
-                ax.set_title("Ground Truth")
+                ax.text(10, 22, text, fontsize = 16)
+            if (plot_titles is None or length > len(plot_titles)):
+                ax.set_title("Ground Truth", fontsize = 20)
 
         modes = ["proba", "label"]
         cb = [True, not gt]
@@ -470,17 +477,22 @@ class data_handler(base_class):
             ax,data = self.plot_data(label_file, reduce_to_mask, pos = pos, subplot = True, mode = modes[i], colorbar = cb[i], cb_pos = cb_p[i])
 
             if (not plot_titles is None):
-                ax.set_title(plot_titles[i])
+                ax.set_title(plot_titles[i], fontsize = 20)
 
             if (gt and i == 1):
                 text = self.get_match_string(data, truth)
-                ax.text(10, 22, text)
+                ax.text(10, 22, text, fontsize = 16)
 
         plt.subplots_adjust(wspace=0.05)
-        plt.show()
+        if(save_file is not None):
+            plt.savefig(save_file, transparent=False)
+        if(show):
+            plt.show()
+        plt.close()
+
 
     def plot_multiple(self, label_files, truth_file = None, georef_file = None, 
-            reduce_to_mask = False, plot_titles = None, hour = None):
+            reduce_to_mask = True, plot_titles = None, hour = None, save_file = None, show = True):
 
         extent = [-6, 42, 25, 50]
 
@@ -488,7 +500,8 @@ class data_handler(base_class):
         lab_lenght = length 
         if(not truth_file is None):
             length+=1
-        plt.figure(figsize=(length*6.5, 4))
+        fig = plt.figure(figsize=(length*13, 8))
+        fig.patch.set_alpha(1)
 
         # plot ground truth
         if (not truth_file is None):
@@ -496,9 +509,9 @@ class data_handler(base_class):
             ax, truth = self.plot_data(truth_file, reduce_to_mask, pos = pos, subplot = True, colorbar = True)
             if (hour is not None):
                 text = "Time: {:02d}:00".format(hour)
-                ax.text(10, 22, text)
+                ax.text(10, 22, text, fontsize = 16)
             if (length > len(plot_titles)):
-                ax.set_title("Ground Truth")
+                ax.set_title("Ground Truth", fontsize = 20)
 
         # plot labels
         for i in range(lab_lenght):
@@ -506,15 +519,18 @@ class data_handler(base_class):
             ax,data = self.plot_data(label_files[i], reduce_to_mask, pos = pos, subplot = True)
 
             if (not plot_titles is None and i < len(plot_titles)):
-                ax.set_title(plot_titles[i])
+                ax.set_title(plot_titles[i], fontsize = 20)
 
             if (not truth_file is None and i < lab_lenght):
                 text = self.get_match_string(data, truth)
-                ax.text(10, 22, text)
+                ax.text(10, 22, text, fontsize = 16)
 
         plt.subplots_adjust(wspace=0.05)
-        plt.show()
-
+        if(save_file is not None):
+            plt.savefig(save_file, transparent=False)
+        if(show):
+            plt.show()
+        plt.close()
 
     def get_plotable_data(self, input_data = None, data_file = None, georef_file = None, 
             reduce_to_mask = False, mode = "label"):
@@ -583,4 +599,4 @@ class data_handler(base_class):
         _, ct_indices, ct_labels = ex.definde_NWCSAF_variables()
 
 
-        conf.plot_confusion_matrix(cm, normalize=normalize, save_file = filename)
+        conf.plot_coocurrence_matrix(cm, normalize=normalize, save_file = filename)

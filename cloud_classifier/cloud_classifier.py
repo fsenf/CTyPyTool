@@ -169,26 +169,74 @@ class cloud_classifier(cloud_trainer, data_handler):
             #TODO: convert and save labels
 
     def evaluation_plots(self, verbose=True, correlation = False, probas = False, 
-        cross = False, cross_partner = None):
+        comparison = False, cmp_targets = None, plot_titles = None, show = True):
 
         for i in range(len(self.label_files)):
+            label_file = self.label_files[i]
+            truth_file = self.evaluation_sets[i][1]
+            timestamp = self.eval_timestamps[i]
+
             if(correlation):
-                self.save_evaluation_coorMatrix(i, verbose=verbose)
+                self.save_coorMatrix(label_file, truth_file, timestamp, verbose=verbose, show = show)
+            if(comparison):
+                self.save_comparePlot(label_file, truth_file, timestamp, cmp_targets, 
+                    plot_titles=plot_titles,verbose=verbose, show = show)
+            if(probas):
+                self.save_probasPlot(label_file, truth_file, timestamp, 
+                    plot_titles=plot_titles, verbose=verbose, show = show)
 
 
 
-    def save_evaluation_coorMatrix(self, index, normalize = True, verbose=True):
-        label_file = self.label_files[index]
-        truth_file = self.evaluation_sets[index][1]
 
-        path = os.path.join("plots", "Coocurrence")
-        fh.create_subfolder(path, self.project_path)
 
-        ts = self.get_timestamp(truth_file, self.label_file_structure, self.timestamp_length)
-        filename = ts + "_correlation_Matrix.png"
+
+
+    def save_comparePlot(self, label_file, truth_file, timestamp, compare_projects= None,
+        plot_titles = None, verbose = True, show = True):
+
+        all_files = [label_file]
+        filename = os.path.split(label_file)[1]
+        for proj_path in compare_projects:
+            path = os.path.join(proj_path, "labels", filename)
+            all_files.append(path)
+
+        path = os.path.join("plots", "Comparisons")
+        fh.create_subfolders(path, self.project_path)
+        hour = int(timestamp[-4:-2])
+
+        filename = timestamp + "_ComparisonPlot.png"
+        path = os.path.join(self.project_path, path, filename)
+        self.plot_multiple(all_files, truth_file, georef_file = self.georef_file, reduce_to_mask = True,
+            plot_titles = plot_titles, hour = hour, save_file = path, show = show)
+        if (verbose):
+            print("Comparison Plot saved at " + path)
+
+        
+    def save_probasPlot(self, label_file, truth_file, timestamp, 
+        plot_titles = None, verbose = True, show = True):
+        
+        path = os.path.join("plots", "Probabilities")
+        fh.create_subfolders(path, self.project_path)
+        hour = int(timestamp[-4:-2])
+
+        filename = timestamp + "_ProbabilityPlot.png"
         path = os.path.join(self.project_path, path, filename)
 
-        self.plot_coocurrence_matrix(label_file, truth_file, normalize, path)
+        self.plot_probas(label_file, truth_file, georef_file = self.georef_file, reduce_to_mask = True,
+            plot_titles = plot_titles, hour = hour, save_file = path, show = show)
+        if (verbose):
+            print("Probability Plot saved at " + path)
+
+    def save_coorMatrix(self, label_file, truth_file, timestamp,
+        normalize = True, verbose = True, show = True):
+
+        path = os.path.join("plots", "Coocurrence")
+        fh.create_subfolders(path, self.project_path)
+
+        filename = timestamp + "_CoocurrenceMatrix.png"
+        path = os.path.join(self.project_path, path, filename)
+
+        self.plot_coocurrence_matrix(label_file, truth_file, normalize, save_file = path, show = show)
         if (verbose):
             print("Correlation Matrix saved at " + path)
 
@@ -327,8 +375,8 @@ class cloud_classifier(cloud_trainer, data_handler):
             print("No folder specified!")
             return
 
-        sat_pattern = self.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
-        lab_pattern = self.get_filename_pattern(self.label_file_structure, self.timestamp_length)
+        sat_pattern = fh.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
+        lab_pattern = fh.get_filename_pattern(self.label_file_structure, self.timestamp_length)
         sat_files, lab_files = {}, {}
         files = os.listdir(folder)
         for file in files:
@@ -360,7 +408,7 @@ class cloud_classifier(cloud_trainer, data_handler):
         """
         splits a set of data into an training and an evaluation set
         """
-        sat_pattern = self.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
+        sat_pattern = fh.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
 
         eval_indeces = []
         timestamps = []
@@ -391,38 +439,15 @@ class cloud_classifier(cloud_trainer, data_handler):
 
 
 
-    def get_hour(self, filename, pattern):
-        timestamp = pattern.match(file).group(1)
-        return int(timestamp[-4:-2])
 
 
     def get_label_name(self, sat_file):
-        timestamp = get_timestamp(sat_file, self.sat_file_structure, self.timestamp_length)
+        timestamp = fh.get_timestamp(sat_file, self.sat_file_structure, self.timestamp_length)
         label_file = self.label_file_structure.replace("TIMESTAMP", timestamp)
         name, ext = os.path.splitext(label_file)
         label_file = name + "_predicted" + ext
         return label_file
 
 
-    def get_timestamp(self, reference_file, structure, ts_length):
-        # get_filename if whole path is given
-        name_split = os.path.split(reference_file)
-        reference_file = name_split[1]
-        
-        # compute regex patterns
-        pattern = self.get_filename_pattern(structure, ts_length)
-
-        timestamp = pattern.match(reference_file)
-        if(not timestamp):
-            raise Exception("Refernce data file does not match specified naming pattern")
-        return timestamp.group(1)
 
 
-    def get_filename_pattern(self, structure, t_length):
-
-        if ("TIMESTAMP" not in structure):
-            raise ValueError("Specified file structure must contain region marked as 'TIMESTAMP'")
-
-        replacemnt =  "(.{" + str(t_length) + "})"
-        pattern =  structure.replace("TIMESTAMP", replacemnt)
-        return re.compile(pattern)
