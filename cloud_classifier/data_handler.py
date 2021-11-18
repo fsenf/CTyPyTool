@@ -573,7 +573,7 @@ class data_handler(base_class):
 
 
 
-    def plot_coocurrence_matrix(self, label_file, truth_file, normalize = True):
+    def plot_coocurrence_matrix(self, label_file, truth_file, normalize = True, filename = None):
 
         t_data,_,_ = self.get_plotable_data(data_file = truth_file, reduce_to_mask = True)
         l_data,_,_ = self.get_plotable_data(data_file = label_file, reduce_to_mask = True)
@@ -583,4 +583,4 @@ class data_handler(base_class):
         _, ct_indices, ct_labels = ex.definde_NWCSAF_variables()
 
 
-        conf.plot_confusion_matrix(cm, normalize=normalize)
+        conf.plot_confusion_matrix(cm, normalize=normalize, save_file = filename)

@@ -9,11 +9,13 @@ from pathlib import Path
 import cloud_trainer as ct
 import data_handler as dh
 import base_class as bc
+import tools.file_handling as fh
 
 import importlib
 importlib.reload(ct)
 importlib.reload(dh)
 importlib.reload(bc)
+importlib.reload(fh)
 
 from cloud_trainer import cloud_trainer
 from data_handler import data_handler
@@ -120,10 +122,79 @@ class cloud_classifier(cloud_trainer, data_handler):
 
 
 
-    #############           Steps of the pipeline         ######################
+    ######################    PIPELINE  ######################################
     ##########################################################################
 
+    def run_training_pipeline(self, verbose = True, create_filelist = True, evaluation = False, create_training_data = False):
+        if (create_filelist):
+            if (evaluation):
+                self.create_split_training_filelist()
+            else:
+                self.create_training_filelist(verbose = verbose)
+        if (self.reference_file is None):
+            self.create_reference_file()
+        self.apply_mask(verbose = verbose)
+        if(create_training_data):
+            v,l = self.create_training_set(verbose = verbose)
+        else: 
+            v,l = self.load_training_set()
+        self.train_classifier(v,l, verbose = verbose)
+        self.save_project_data()
 
+
+    def run_prediction_pipeline(self, verbose = True, create_filelist = True, evaluation = False):
+
+        if (create_filelist and not evaluation):
+            self.extract_input_filelist(verbose = verbose)
+
+        self.load_classifier(reload = True, verbose = verbose)
+        self.apply_mask(verbose = verbose)
+        self.set_reference_file(verbose = verbose)
+        self.label_files = []
+        for file in self.input_files:
+            vectors, indices = self.create_input_vectors(file, verbose = verbose)
+            probas = None
+            if(self.classifier_type == "Forest"):
+                li = self.classifier.classes_
+                probas = self.get_forest_proabilties(vectors)
+                labels = [li[i] for i in np.argmax(probas, axis = 1)]
+            else:
+                labels = self.predict_labels(vectors, verbose = verbose)
+
+            filename = self.save_labels(labels, indices, file, probas, verbose = verbose)
+            self.label_files.append(filename)
+
+
+        self.save_project_data()
+            #TODO: convert and save labels
+
+    def evaluation_plots(self, verbose=True, correlation = False, probas = False, 
+        cross = False, cross_partner = None):
+
+        for i in range(len(self.label_files)):
+            if(correlation):
+                self.save_evaluation_coorMatrix(i, verbose=verbose)
+
+
+
+    def save_evaluation_coorMatrix(self, index, normalize = True, verbose=True):
+        label_file = self.label_files[index]
+        truth_file = self.evaluation_sets[index][1]
+
+        path = os.path.join("plots", "Coocurrence")
+        fh.create_subfolder(path, self.project_path)
+
+        ts = self.get_timestamp(truth_file, self.label_file_structure, self.timestamp_length)
+        filename = ts + "_correlation_Matrix.png"
+        path = os.path.join(self.project_path, path, filename)
+
+        self.plot_coocurrence_matrix(label_file, truth_file, normalize, path)
+        if (verbose):
+            print("Correlation Matrix saved at " + path)
+
+
+    #############           Steps of the pipeline         ######################
+    ##########################################################################
 
 
     #### training
@@ -232,57 +303,9 @@ class cloud_classifier(cloud_trainer, data_handler):
         self.save_project_data()
 
 
-    ##########################################################################
-
-    def run_training_pipeline(self, verbose = True, create_filelist = True, evaluation = False, create_training_data = False):
-        if (create_filelist):
-            if (evaluation):
-                self.create_split_training_filelist()
-            else:
-                self.create_training_filelist(verbose = verbose)
-        if (self.reference_file is None):
-            self.create_reference_file()
-        self.apply_mask(verbose = verbose)
-        if(create_training_data):
-            v,l = self.create_training_set(verbose = verbose)
-        else: 
-            v,l = self.load_training_set()
-        self.train_classifier(v,l, verbose = verbose)
-        self.save_project_data()
-
-
-    def run_prediction_pipeline(self, verbose = True, create_filelist = True, evaluation = False):
-
-        if (create_filelist and not evaluation):
-            self.extract_input_filelist(verbose = verbose)
-
-        self.load_classifier(reload = True, verbose = verbose)
-        self.apply_mask(verbose = verbose)
-        self.set_reference_file(verbose = verbose)
-        self.label_files = []
-        for file in self.input_files:
-            vectors, indices = self.create_input_vectors(file, verbose = verbose)
-            probas = None
-            if(self.classifier_type == "Forest"):
-                li = self.classifier.classes_
-                probas = self.get_forest_proabilties(vectors)
-                labels = [li[i] for i in np.argmax(probas, axis = 1)]
-            else:
-                labels = self.predict_labels(vectors, verbose = verbose)
-
-            filename = self.save_labels(labels, indices, file, probas, verbose = verbose)
-            self.label_files.append(filename)
-
-
-        self.save_project_data()
-            #TODO: convert and save labels
-
-
-
-
-
 
     ##########################################################################
+    #### TODO: externalize
 
 
     def generate_filelist_from_folder(self, folder = None, no_labels = False):
@@ -367,13 +390,6 @@ class cloud_classifier(cloud_trainer, data_handler):
 
 
 
-    def get_filename_pattern(self, structure, t_length):
-        if ("TIMESTAMP" not in structure):
-            raise ValueError("Specified file structure must contain region marked as 'TIMESTAMP'")
-
-        replacemnt =  "(.{" + str(t_length) + "})"
-        pattern =  structure.replace("TIMESTAMP", replacemnt)
-        return re.compile(pattern)
 
     def get_hour(self, filename, pattern):
         timestamp = pattern.match(file).group(1)
@@ -381,17 +397,32 @@ class cloud_classifier(cloud_trainer, data_handler):
 
 
     def get_label_name(self, sat_file):
-        # get_filename if whole path is given
-        name_split = os.path.split(sat_file)
-        reference_file = name_split[1]
-        # compute regex patterns
-        sat_pattern = self.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
-
-        timestamp = sat_pattern.match(reference_file)
-        if(not timestamp):
-            raise Exception("Satelite data file does not match specified naming pattern")
-        timestamp = timestamp.group(1)
+        timestamp = get_timestamp(sat_file, self.sat_file_structure, self.timestamp_length)
         label_file = self.label_file_structure.replace("TIMESTAMP", timestamp)
         name, ext = os.path.splitext(label_file)
         label_file = name + "_predicted" + ext
         return label_file
+
+
+    def get_timestamp(self, reference_file, structure, ts_length):
+        # get_filename if whole path is given
+        name_split = os.path.split(reference_file)
+        reference_file = name_split[1]
+        
+        # compute regex patterns
+        pattern = self.get_filename_pattern(structure, ts_length)
+
+        timestamp = pattern.match(reference_file)
+        if(not timestamp):
+            raise Exception("Refernce data file does not match specified naming pattern")
+        return timestamp.group(1)
+
+
+    def get_filename_pattern(self, structure, t_length):
+
+        if ("TIMESTAMP" not in structure):
+            raise ValueError("Specified file structure must contain region marked as 'TIMESTAMP'")
+
+        replacemnt =  "(.{" + str(t_length) + "})"
+        pattern =  structure.replace("TIMESTAMP", replacemnt)
+        return re.compile(pattern)
