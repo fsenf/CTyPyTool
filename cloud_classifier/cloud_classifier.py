@@ -9,7 +9,10 @@ from pathlib import Path
 import cloud_trainer as ct
 import data_handler as dh
 import base_class as bc
+
 import tools.file_handling as fh
+import tools.confusion as conf
+
 
 import importlib
 importlib.reload(ct)
@@ -168,24 +171,43 @@ class cloud_classifier(cloud_trainer, data_handler):
         self.save_project_data()
             #TODO: convert and save labels
 
-    def evaluation_plots(self, verbose=True, correlation = False, probas = False, 
-        comparison = False, cmp_targets = None, plot_titles = None, show = True):
+
+
+
+
+
+######################    Evaluation  ######################################
+############################################################################
+
+
+    def create_evaluation_plots(self, correlation = False, probas = False, comparison = False, 
+        cmp_targets = None, plot_titles = None, show = True, verbose = True):
 
         for i in range(len(self.label_files)):
             label_file = self.label_files[i]
             truth_file = self.evaluation_sets[i][1]
             timestamp = self.eval_timestamps[i]
-
             if(correlation):
-                self.save_coorMatrix(label_file, truth_file, timestamp, verbose=verbose, show = show)
+                self.save_coorMatrix(label_file = label_file, truth_file = truth_file, timestamp = timestamp, 
+                    verbose=verbose, show = show)
             if(comparison):
-                self.save_comparePlot(label_file, truth_file, timestamp, cmp_targets, 
-                    plot_titles=plot_titles,verbose=verbose, show = show)
+                self.save_comparePlot(label_file = label_file, truth_file = truth_file, timestamp = timestamp, 
+                    compare_projects =cmp_targets, plot_titles=plot_titles,verbose=verbose, show = show)
             if(probas):
-                self.save_probasPlot(label_file, truth_file, timestamp, 
+                self.save_probasPlot(label_file = label_file, truth_file = truth_file, timestamp = timestamp, 
                     plot_titles=plot_titles, verbose=verbose, show = show)
 
 
+    def get_overallCoocurrence(self, show = False):
+        all_labels, all_truth = [], []
+        for i in range(len(self.label_files)):
+            label_file = self.label_files[i]
+            truth_file = self.evaluation_sets[i][1]
+            all_labels.append(self.get_plotable_data(data_file = label_file, get_coords = False))
+            all_truth.append(self.get_plotable_data(data_file = truth_file, get_coords = False))
+        all_labels, all_truth = fh.clean_eval_data(all_labels, all_truth)
+
+        self.save_coorMatrix( label_data = all_labels, truth_data = all_truth, filename = "Overall_CoocurrenceMatrix.png", show = show)
 
 
 
@@ -213,13 +235,14 @@ class cloud_classifier(cloud_trainer, data_handler):
 
         
     def save_probasPlot(self, label_file, truth_file, timestamp, 
-        plot_titles = None, verbose = True, show = True):
+        plot_titles = None, verbose = True, show = True, filename = None):
         
         path = os.path.join("plots", "Probabilities")
         fh.create_subfolders(path, self.project_path)
         hour = int(timestamp[-4:-2])
 
-        filename = timestamp + "_ProbabilityPlot.png"
+        if (filename is None):
+            filename = timestamp + "_ProbabilityPlot.png"
         path = os.path.join(self.project_path, path, filename)
 
         self.plot_probas(label_file, truth_file, georef_file = self.georef_file, reduce_to_mask = True,
@@ -227,18 +250,47 @@ class cloud_classifier(cloud_trainer, data_handler):
         if (verbose):
             print("Probability Plot saved at " + path)
 
-    def save_coorMatrix(self, label_file, truth_file, timestamp,
+
+    def save_coorMatrix(self, label_file = None, truth_file = None, 
+        label_data = None, truth_data = None,
+        timestamp = None, filename = None,
         normalize = True, verbose = True, show = True):
+
+        if (truth_file is None and truth_data is None):
+                raise ValueError("'truth_file' or 'truth_data' be specified!")
+        if (label_file is None and label_data is None):
+                raise ValueError("'label_file' or 'label_data' be specified!")
+        if (filename is None and timestamp is None):
+                raise ValueError("'filename' or 'timestamp' be specified!")
+
+        if (filename is None):
+            filename = timestamp + "_CoocurrenceMatrix.png"
+        if(label_data is None):
+            label_data = self.get_plotable_data(data_file = label_file, reduce_to_mask = True, get_coords = False)
+        if(truth_data is None):
+            truth_data = self.get_plotable_data(data_file = truth_file, reduce_to_mask = True, get_coords = False)
 
         path = os.path.join("plots", "Coocurrence")
         fh.create_subfolders(path, self.project_path)
+        filename = os.path.join(self.project_path, path, filename)
 
-        filename = timestamp + "_CoocurrenceMatrix.png"
-        path = os.path.join(self.project_path, path, filename)
-
-        self.plot_coocurrence_matrix(label_file, truth_file, normalize, save_file = path, show = show)
+        conf.plot_coocurrence_matrix(label_data, truth_data, normalize=normalize, save_file = filename)
         if (verbose):
-            print("Correlation Matrix saved at " + path)
+            print("Correlation Matrix saved at " + path, filename)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     #############           Steps of the pipeline         ######################
@@ -247,8 +299,10 @@ class cloud_classifier(cloud_trainer, data_handler):
 
     #### training
     def create_training_filelist(self, verbose = True):
-        self.training_sets =  self.generate_filelist_from_folder(self.data_source_folder)
-        filepath = os.path.join(self.project_path, "settings", "training_sets.json")
+        satFile_pattern = fh.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
+        labFile_pattern = fh.get_filename_pattern(self.label_file_structure, self.timestamp_length)
+        self.training_sets =  fh.generate_filelist_from_folder(self.data_source_folder, satFile_pattern, labFile_pattern)
+        filepath = os.path.join(self.project_path, "filelists", "training_sets.json")
         self.save_parameters(filepath)
         if (verbose):
             print("Filelist created!")
@@ -305,7 +359,7 @@ class cloud_classifier(cloud_trainer, data_handler):
 
     ### predicting
     def extract_input_filelist(self, verbose = True):
-        self.input_files =  self.generate_filelist_from_folder(folder = self.input_source_folder, no_labels = True)
+        self.input_files =  fh.generate_filelist_from_folder(folder = self.input_source_folder, only_sataData = True)
         filepath = os.path.join(self.project_path, "filelists", "input_files.json")
         self.save_parameters(filepath)
         if (verbose):
@@ -335,7 +389,7 @@ class cloud_classifier(cloud_trainer, data_handler):
         return labels
 
     def save_labels(self, labels, indices, sat_file, probas = None, verbose = True):
-        name = self.get_label_name(sat_file)
+        name = fh.get_label_name(sat_file, self.file_structure, self.timestamp_length)
         filepath = os.path.join(self.project_path, "labels", name)
         self.make_xrData(labels, indices, NETCDF_out = filepath, prob_data = probas)
         if(verbose):
@@ -346,108 +400,8 @@ class cloud_classifier(cloud_trainer, data_handler):
     ### evaluation
     def create_split_training_filelist(self):
         datasets =  self.generate_filelist_from_folder(self.data_source_folder)
-        self.training_sets, self.evaluation_sets, self.timestamps = self.split_sets(datasets, 24, timesensitive = True)
+        satFile_pattern = fh.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
+
+        self.training_sets, self.evaluation_sets, self.timestamps = self.split_sets(datasets, satFile_pattern, 24, timesensitive = True)
         self.input_files = [s[0] for s in self.evaluation_sets]
         self.save_project_data()
-
-
-
-    ##########################################################################
-    #### TODO: externalize
-
-
-    def generate_filelist_from_folder(self, folder = None, no_labels = False):
-        """
-        Extracts trainig files from folder
-        Reads all matching files of satellite and label data from folder and adds them to project
-
-        Parameters
-        ----------
-        folder : string (Optional)
-            Path to the folder containig the data files. If none is given path will be read from settings
-        additive : bool
-            Default is True. If True, files will be read additive, if False old filelists will be overwritten.
-        no_labels : bool 
-            Default is False. If True, filelist will contain sat data and labels, if False only sat_data files.
-        """
-
-        if (folder is None):
-            print("No folder specified!")
-            return
-
-        sat_pattern = fh.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
-        lab_pattern = fh.get_filename_pattern(self.label_file_structure, self.timestamp_length)
-        sat_files, lab_files = {}, {}
-        files = os.listdir(folder)
-        for file in files:
-            sat_id = sat_pattern.match(file)
-            lab_id = lab_pattern.match(file)
-            
-            if (sat_id):
-                sat_files[sat_id.group(1)] = os.path.join(folder, file)
-            elif (lab_id):
-                lab_files[lab_id.group(1)] = os.path.join(folder, file)
-
-
-        if no_labels:
-            # return onky satelite date 
-            return list(sat_files.values())
-        else:
-            # find pairs of sat data and labels
-            training_sets = []
-            for key in sat_files.keys():
-                if(key in lab_files):
-                    training_sets.append([sat_files[key], lab_files[key]])
-            return  training_sets
-
-
-
-
-
-    def split_sets(self, dataset, eval_size = 24, timesensitive = True):
-        """
-        splits a set of data into an training and an evaluation set
-        """
-        sat_pattern = fh.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
-
-        eval_indeces = []
-        timestamps = []
-        if(timesensitive):
-            if(eval_size % 24 != 0):
-                raise ValueError("When using timesensitive splitting eval_size must be multiple of 24")
-            timesorted = [[] for _ in range(24)]
-            for i in range(len(dataset)):
-                sat_id = sat_pattern.match(os.path.basename(dataset[i][0]))
-                if(sat_id):
-                    timestamp = sat_id.group(1)
-                    timestamps.append(timestamp)
-                    hour = int(timestamp[-4:-2])
-                    timesorted[hour].append(i)
-            n = int(eval_size/24)
-            for h in range(24):
-                eval_indeces += random.sample(timesorted[h], n)
-        else:
-            eval_indeces = random.sample(range(len(dataset)), eval_size)
-
-        training_indeces = [i for i in range(len(dataset)) if i not in eval_indeces]
-        eval_set = [dataset[i] for i in eval_indeces]
-        training_set = [dataset[i] for i in training_indeces]
-
-        return training_set, eval_set, timestamps
-
-
-
-
-
-
-
-    def get_label_name(self, sat_file):
-        timestamp = fh.get_timestamp(sat_file, self.sat_file_structure, self.timestamp_length)
-        label_file = self.label_file_structure.replace("TIMESTAMP", timestamp)
-        name, ext = os.path.splitext(label_file)
-        label_file = name + "_predicted" + ext
-        return label_file
-
-
-
-

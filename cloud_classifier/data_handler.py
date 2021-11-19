@@ -13,13 +13,14 @@ import matplotlib.cm as cm
 import cartopy
 import cartopy.crs as ccrs
 
-import tools.data_extraction as ex
-import tools.confusion as conf
+import tools.training_data as td
+import tools.file_handling as fh
 import base_class
 #
 import importlib
-importlib.reload(ex)
+importlib.reload(td)
 importlib.reload(conf)
+importlib.reload(fh)
 
 from base_class import base_class
 from cloud_trainer import cloud_trainer
@@ -136,21 +137,21 @@ class data_handler(base_class):
         if (masked_indices is None):
             masked_indices = self.masked_indices
         # Get vectors from all added training sets
-        vectors, labels = ex.sample_training_sets(training_sets, self.samples, self.hours, masked_indices, 
+        vectors, labels = td.sample_training_sets(training_sets, self.samples, self.hours, masked_indices, 
                                                 self.input_channels, self.cloudtype_channel, 
                                                 verbose = self.verbose)
 
         # Remove nan values
-        vectors, labels = ex.clean_training_set(vectors, labels)
+        vectors, labels = td.clean_training_set(vectors, labels)
 
         if (self.difference_vectors):
             # create difference vectors
-            vectors = ex.create_difference_vectors(vectors, self.original_values)
+            vectors = td.create_difference_vectors(vectors, self.original_values)
         
         if (self.nwcsaf_in_version == 'auto'):
             self.nwcsaf_in_version = self.check_nwcsaf_version(labels, verbose = False)
         
-        labels = ex.switch_nwcsaf_version(labels, self.nwcsaf_out_version, self.nwcsaf_in_version)
+        labels = fh.switch_nwcsaf_version(labels, self.nwcsaf_out_version, self.nwcsaf_in_version)
 
         return vectors, labels
 
@@ -178,9 +179,9 @@ class data_handler(base_class):
         if (labels is None and filename is None):
             raise  ValueError("Label or filename must be specified")
         if (labels is None):
-            labels = ex.extract_labels(filename = filename, ct_channel = self.cloudtype_channel)
+            labels = td.extract_labels(filename = filename, ct_channel = self.cloudtype_channel)
             
-        r = ex.check_nwcsaf_version(labels)
+        r = fh.check_nwcsaf_version(labels)
         if(verbose):
             if (r is None):
                 print("Could not determine ncwsaf version of the labels")
@@ -219,10 +220,10 @@ class data_handler(base_class):
             indices = np.where(~np.isnan(sat_data[self.input_channels[0]][0]))
             print("No mask indices given, using complete data set")
 
-        vectors = ex.extract_feature_vectors(sat_data, indices, hour, self.input_channels)
-        vectors, indices = ex.clean_test_vectors(vectors, indices)
+        vectors = td.extract_feature_vectors(sat_data, indices, hour, self.input_channels)
+        vectors, indices = td.clean_test_vectors(vectors, indices)
         if (self.difference_vectors):
-            vectors = ex.create_difference_vectors(vectors, self.original_values)
+            vectors = td.create_difference_vectors(vectors, self.original_values)
 
         return vectors, indices
 
@@ -259,13 +260,13 @@ class data_handler(base_class):
             else:
                 print("No mask indices given, using complete data set")
 
-        labels = ex.extract_labels(filename, indices, hour, self.cloudtype_channel)
+        labels = td.extract_labels(filename, indices, hour, self.cloudtype_channel)
 
         if (self.nwcsaf_in_version == 'auto'):
             self.check_nwcsaf_version(labels, True)
 
         if (self.nwcsaf_in_version is not self.nwcsaf_out_version):
-            labels = ex.switch_nwcsaf_version(labels, self.nwcsaf_out_version)
+            labels = fh.switch_nwcsaf_version(labels, self.nwcsaf_out_version)
 
         return labels
 
@@ -322,7 +323,7 @@ class data_handler(base_class):
             out["label_probability"] = (new_dims, new_data)
 
         if (not NETCDF_out is None):
-            ex.write_NETCDF(out, NETCDF_out)
+            fh.write_NETCDF(out, NETCDF_out)
 
         return out
 
@@ -403,11 +404,11 @@ class data_handler(base_class):
 
 
 
-    def plot_data(self, label_file, reduce_to_mask = False , extent= None,  cmap = "hot", mode = "label", 
+    def plot_data(self, label_file, reduce_to_mask = True , extent= None,  cmap = "hot", mode = "label", 
         subplot = False, pos = None, colorbar = False, cb_pos = 0.95):
 
         if (mode == "label"):
-            ct_colors, ct_indices, ct_labels = ex.definde_NWCSAF_variables()
+            ct_colors, ct_indices, ct_labels = fh.definde_NWCSAF_variables()
             cmap = plt.matplotlib.colors.ListedColormap(ct_colors)
             vmin = 1
             vmax = 15
@@ -480,7 +481,7 @@ class data_handler(base_class):
                 ax.set_title(plot_titles[i], fontsize = 20)
 
             if (gt and i == 1):
-                text = self.get_match_string(data, truth)
+                text = fh.get_match_string(data, truth)
                 ax.text(10, 22, text, fontsize = 16)
 
         plt.subplots_adjust(wspace=0.05)
@@ -522,7 +523,7 @@ class data_handler(base_class):
                 ax.set_title(plot_titles[i], fontsize = 20)
 
             if (not truth_file is None and i < lab_lenght):
-                text = self.get_match_string(data, truth)
+                text = fh.get_match_string(data, truth)
                 ax.text(10, 22, text, fontsize = 16)
 
         plt.subplots_adjust(wspace=0.05)
@@ -533,7 +534,7 @@ class data_handler(base_class):
         plt.close()
 
     def get_plotable_data(self, input_data = None, data_file = None, georef_file = None, 
-            reduce_to_mask = False, mode = "label"):
+            reduce_to_mask = True, get_coords = True, mode = "label"):
         """
         Returns input_data and coordinates in a plottable format 
         """
@@ -543,16 +544,6 @@ class data_handler(base_class):
     
         elif (input_data is None):
             input_data = xr.open_dataset(data_file)
-
-        if(georef_file is None):
-            georef_file = self.georef_file
-        if(georef_file is None):
-            x = input_data.coords['lon']
-            y = input_data.coords['lat']
-        else:
-            georef = xr.open_dataset(georef_file)
-            x = georef.coords['lon']
-            y = georef.coords['lat']
 
         if (mode == "label"):
             data = input_data[self.cloudtype_channel][0]
@@ -573,30 +564,20 @@ class data_handler(base_class):
         out_data[:] = np.nan
         data = np.array(data)[indices[0], indices[1]]
         out_data[indices[0],indices[1]] = data
-        out_data = ex.switch_nwcsaf_version(out_data, target_version = 'v2018')
+        out_data = fh.switch_nwcsaf_version(out_data, target_version = 'v2018')
+            
+        if(not get_coords):
+            return out_data
+        else:
+            if(georef_file is None):
+                georef_file = self.georef_file
+            if(georef_file is None):
+                x = input_data.coords['lon']
+                y = input_data.coords['lat']
+            else:
+                georef = xr.open_dataset(georef_file)
+                x = georef.coords['lon']
+                y = georef.coords['lat']
 
-        return out_data, x, y
+            return out_data, x, y
 
-
-
-    def get_match_string(self, labels, truth):
-        
-        correct = np.sum(labels == truth)
-        not_nan = np.where(~np.isnan(labels))
-        total = len(not_nan[0].flatten())
-        
-        return "Correctly identified {:.2f} %".format(100*correct/total)
-
-
-
-    def plot_coocurrence_matrix(self, label_file, truth_file, normalize = True, filename = None):
-
-        t_data,_,_ = self.get_plotable_data(data_file = truth_file, reduce_to_mask = True)
-        l_data,_,_ = self.get_plotable_data(data_file = label_file, reduce_to_mask = True)
-
-        cm = conf.confusion_matrix(l_data, t_data)
-
-        _, ct_indices, ct_labels = ex.definde_NWCSAF_variables()
-
-
-        conf.plot_coocurrence_matrix(cm, normalize=normalize, save_file = filename)

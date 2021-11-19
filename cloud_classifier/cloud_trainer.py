@@ -10,15 +10,12 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import SelectKBest, chi2
 
-import tools.plotting as pl
 import base_class
 import importlib
 import inspect
 
-importlib.reload(pl)
 
 from base_class import base_class
-#from data_handler import data_handler
 
 class cloud_trainer(base_class):
     """
