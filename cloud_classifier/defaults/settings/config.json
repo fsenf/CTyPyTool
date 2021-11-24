@@ -6,6 +6,7 @@
     "n_estimators": 75,
     "feature_preselection": false,
     "max_features": null,
-    "min_samples_split" : 2
+    "min_samples_split" : 2,
+    "merge_list" : []
 
 }

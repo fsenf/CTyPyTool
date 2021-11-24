@@ -16,7 +16,6 @@ def create_subfolders(path, project_path):
             os.mkdir(current_path)
 
 
-
 def get_filename_pattern(structure, t_length):
 
     if ("TIMESTAMP" not in structure):
@@ -25,7 +24,6 @@ def get_filename_pattern(structure, t_length):
     replacemnt =  "(.{" + str(t_length) + "})"
     pattern =  structure.replace("TIMESTAMP", replacemnt)
     return re.compile(pattern)
-
 
 
 def get_timestamp(reference_file, structure, ts_length):
@@ -40,7 +38,6 @@ def get_timestamp(reference_file, structure, ts_length):
     if(not timestamp):
         raise Exception("Refernce data file does not match specified naming pattern")
     return timestamp.group(1)
-
 
 
 def generate_filelist_from_folder(folder, satFile_pattern, labFile_pattern, only_sataData = False):
@@ -176,7 +173,7 @@ def check_nwcsaf_version(labels):
     checks if cloud type labels are mapped by the 2013-netcdf standard
 
     uses occurences in layers 16-19 (only in use at 2013 standard)
-    and 7,9,11,13 (only in use at 2016 standard) 
+    and 7,9,11,13 (only in use at 2018 standard) 
     """
     high_sum = odd_sum = 0
     for i in range(16,20):
@@ -194,7 +191,7 @@ def check_nwcsaf_version(labels):
 
 def switch_nwcsaf_version(labels, target_version, input_version = None):
     """
-    maps netcdf cloud types from the 2013 standard to the 2016 standard
+    maps netcdf cloud types from the 2013 standard to the 2018 standard
     """
     if (input_version is None):
         input_version = check_nwcsaf_version(labels)
@@ -233,12 +230,29 @@ def definde_NWCSAF_variables(missing_labels = None):
     return ct_colors, ct_indices, ct_labels
 
 
+def translate_mergeList(merge_list):
+    _, indices, labels = definde_NWCSAF_variables()
+    intLabel = [int(i) for i in indices]
+    merge_ints = []
+    for merge_pair in merge_list:
+        l1 = labels.index(merge_pair[0]) 
+        l2 = labels.index(merge_pair[1])
+        merge_ints.append([intLabel[l1],intLabel[l2]])
+    return merge_ints
+
+
+def merge_labels(labels, merge_list):
+    merge_ints = translate_mergeList(merge_list)
+    for merge_pair in merge_ints:
+        labels[labels == merge_pair[1]] = merge_pair[0]
+
+
 def switch_2018(labels):
     """
-    maps netcdf cloud types from the 2013 standard to the 2016 standard
+    maps netcdf cloud types from the 2013 standard to the 2018 standard
     """
-    labels[labels == 6.0] = 5.0 # very low clouds
-    labels[labels == 8.0] = 6.0 # low clouds
+    labels[labels ==  6.0] = 5.0 # very low clouds
+    labels[labels ==  8.0] = 6.0 # low clouds
     labels[labels == 10.0] = 7.0 # middle clouds
     labels[labels == 12.0] = 8.0 # high opaque clouds
     labels[labels == 14.0] = 9.0 # very high opaque clouds
@@ -247,13 +261,13 @@ def switch_2018(labels):
     labels[labels == 16.0] = 12.0 # high semitransparent moderatly thick clouds
     labels[labels == 17.0] = 13.0 # high semitransparent thick clouds
     labels[labels == 18.0] = 14.0 # high semitransparent above low or medium clouds
-    # issing: 15:  High semitransparent above snow/ice
+    # missing: 15:  High semitransparent above snow/ice
     return labels
 
 
 def switch_2013(labels):
     """
-    maps netcdf cloud types from the 2016 standard to the 2013 standard
+    maps netcdf cloud types from the 2018 standard to the 2013 standard
     """
     labels[labels == 15.0] = 18.0 # high semitransparent above snow/ice
     labels[labels == 14.0] = 18.0 # high semitransparent above low or medium clouds
@@ -261,11 +275,11 @@ def switch_2013(labels):
     labels[labels == 12.0] = 16.0 # high semitransparent moderatly thick clouds
     labels[labels == 11.0] = 15.0 # high semitransparent thin clouds
     labels[labels == 10.0] = 19.0 # fractional clouds
-    labels[labels == 9.0] = 14.0 # very high opaque clouds
-    labels[labels == 8.0] = 12.0 # high opaque clouds
-    labels[labels == 7.0] = 10.0 # middle clouds
-    labels[labels == 6.0] = 8.0 # low clouds
-    labels[labels == 5.0] = 6.0 # very low clouds
+    labels[labels ==  9.0] = 14.0 # very high opaque clouds
+    labels[labels ==  8.0] = 12.0 # high opaque clouds
+    labels[labels ==  7.0] = 10.0 # middle clouds
+    labels[labels ==  6.0] = 8.0 # low clouds
+    labels[labels ==  5.0] = 6.0 # very low clouds
 
     return labels
 

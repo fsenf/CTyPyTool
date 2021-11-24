@@ -19,7 +19,6 @@ import base_class
 #
 import importlib
 importlib.reload(td)
-importlib.reload(conf)
 importlib.reload(fh)
 
 from base_class import base_class
@@ -58,6 +57,7 @@ class data_handler(base_class):
             'mask_sea_coding',
             'reference_file',
             'georef_file'
+            'merge_list'
             ]
 
         super().init_class_variables(class_variables)

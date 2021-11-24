@@ -147,3 +147,5 @@ def clean_test_vectors(vectors, indices):
     if (d>0):
         print("Removed " + str(d) + " vectors for containig 'Nan' values")
     return vectors[valid], np.array([indices[0][valid], indices[1][valid]])
+
+
