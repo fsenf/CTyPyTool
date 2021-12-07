@@ -359,7 +359,13 @@ class cloud_classifier(cloud_trainer, data_handler):
 
     ### predicting
     def extract_input_filelist(self, verbose = True):
-        self.input_files =  fh.generate_filelist_from_folder(folder = self.input_source_folder, only_sataData = True)
+        satFile_pattern = fh.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
+        labFile_pattern = fh.get_filename_pattern(self.label_file_structure, self.timestamp_length)
+
+        self.input_files =  fh.generate_filelist_from_folder(folder = self.input_source_folder,
+            satFile_pattern = satFile_pattern,
+            labFile_pattern = labFile_pattern,
+            only_sataData = True)
         filepath = os.path.join(self.project_path, "filelists", "input_files.json")
         self.save_parameters(filepath)
         if (verbose):
@@ -389,7 +395,7 @@ class cloud_classifier(cloud_trainer, data_handler):
         return labels
 
     def save_labels(self, labels, indices, sat_file, probas = None, verbose = True):
-        name = fh.get_label_name(sat_file, self.file_structure, self.timestamp_length)
+        name = fh.get_label_name(sat_file, self.sat_file_structure, self.label_file_structure, self.timestamp_length)
         filepath = os.path.join(self.project_path, "labels", name)
         self.make_xrData(labels, indices, NETCDF_out = filepath, prob_data = probas)
         if(verbose):

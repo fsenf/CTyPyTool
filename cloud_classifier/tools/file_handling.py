@@ -149,9 +149,9 @@ def split_sets(dataset, satFile_pattern, eval_size = 24, timesensitive = True):
 
 
 
-def get_label_name(sat_file, file_structure, timestamp_length):
-    timestamp = get_timestamp(sat_file, file_structure, timestamp_length)
-    label_file = file_structure.replace("TIMESTAMP", timestamp)
+def get_label_name(sat_file, sat_file_structure, lab_file_structure, timestamp_length):
+    timestamp = get_timestamp(sat_file, sat_file_structure, timestamp_length)
+    label_file = lab_file_structure.replace("TIMESTAMP", timestamp)
     name, ext = os.path.splitext(label_file)
     label_file = name + "_predicted" + ext
     return label_file
