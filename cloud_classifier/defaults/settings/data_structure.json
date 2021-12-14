@@ -1,14 +1,13 @@
 {   
-    "data_source_folder" : "../data/full_dataset",
-    "timestamp_length" : 13,
-    "sat_file_structure" : "msevi-medi-TIMESTAMP.nc",
-    "label_file_structure" : "nwcsaf_msevi-medi-TIMESTAMP.nc",
-    "input_source_folder" : "../data/input_data" ,    
-    "georef_file" : "../data/msevi-medi-georef.nc" ,
-    "mask_file" : "../data/training_data/lsm_mask_medi.nc",
-    "mask_key" : "land_sea_mask",
-    "mask_sea_coding" : 0, 
-
+    "data_source_folder": "../data/full_dataset",
+    "timestamp_length": 13,
+    "sat_file_structure": "msevi-medi-TIMESTAMP.nc",
+    "label_file_structure": "nwcsaf_msevi-medi-TIMESTAMP.nc",
+    "input_source_folder": "../data/prediction_data",
+    "georef_file" : "../data/auxilary_files/msevi-medi-georef.nc" ,
+    "mask_file" : "../data/auxilary_files/lsm_mask_medi.nc",  
+    "mask_key": "land_sea_mask",
+    "mask_sea_coding": 0,
     "input_channels": [
         "bt062",
         "bt073",

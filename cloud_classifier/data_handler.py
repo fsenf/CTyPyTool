@@ -16,6 +16,8 @@ import cartopy.crs as ccrs
 import tools.training_data as td
 import tools.file_handling as fh
 import base_class
+import tools.confusion as conf
+
 #
 import importlib
 importlib.reload(td)
@@ -56,7 +58,7 @@ class data_handler(base_class):
             'mask_key',
             'mask_sea_coding',
             'reference_file',
-            'georef_file'
+            'georef_file',
             'merge_list'
             ]
 
@@ -416,7 +418,8 @@ class data_handler(base_class):
             vmin = 0.0
             vmax = 1.0
 
-
+        if (not subplot):
+            plt.figure(figsize=(13, 8))
         if(extent is None):
              extent = [-6, 42, 25, 50]
 
@@ -443,11 +446,11 @@ class data_handler(base_class):
                 cbar.ax.tick_params(labelsize=14)
                 cbar.set_ticklabels(ct_labels)
 
+        if(subplot):
+            return ax, data
 
-        return ax, data
 
-
-    def plot_probas(self, label_file, truth_file = None, georef_file = None, reduce_to_mask = False, 
+    def plot_probas(self, label_file, truth_file = None, georef_file = None, reduce_to_mask = True, 
         plot_corr = False, plot_titles = None, hour = None, save_file = None, show = True):
 
         gt = (not truth_file is None)
@@ -475,7 +478,7 @@ class data_handler(base_class):
         cb_p = [0.05, 0.95]
         for i in range(len(modes)):
             pos = [1,length,i+1]
-            ax,data = self.plot_data(label_file, reduce_to_mask, pos = pos, subplot = True, mode = modes[i], colorbar = cb[i], cb_pos = cb_p[i])
+            ax,data = self.plot_data(label_file, reduce_to_mask = reduce_to_mask, pos = pos, subplot = True, mode = modes[i], colorbar = cb[i], cb_pos = cb_p[i])
 
             if (not plot_titles is None):
                 ax.set_title(plot_titles[i], fontsize = 20)
@@ -507,7 +510,7 @@ class data_handler(base_class):
         # plot ground truth
         if (not truth_file is None):
             pos = [1,length,length]
-            ax, truth = self.plot_data(truth_file, reduce_to_mask, pos = pos, subplot = True, colorbar = True)
+            ax, truth = self.plot_data(truth_file, reduce_to_mask = reduce_to_mask, pos = pos, subplot = True, colorbar = True)
             if (hour is not None):
                 text = "Time: {:02d}:00".format(hour)
                 ax.text(10, 22, text, fontsize = 16)
@@ -559,7 +562,6 @@ class data_handler(base_class):
         else:
             indices = np.where(~np.isnan(data))
 
-
         out_data = np.empty(data.shape)
         out_data[:] = np.nan
         data = np.array(data)[indices[0], indices[1]]
@@ -581,3 +583,9 @@ class data_handler(base_class):
 
             return out_data, x, y
 
+
+
+    def plot_coocurrence_matrix(self, label_file, truth_file, normalize=True):
+        label_data = self.get_plotable_data(data_file = label_file, reduce_to_mask = True, get_coords = False)
+        truth_data = self.get_plotable_data(data_file = truth_file, reduce_to_mask = True, get_coords = False)
+        conf.plot_coocurrence_matrix(label_data, truth_data, normalize=normalize)
