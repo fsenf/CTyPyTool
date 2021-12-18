@@ -3,7 +3,6 @@ import os
 import numpy as np
 import shutil
 import re
-import random
 from pathlib import Path
 
 import cloud_trainer as ct
@@ -128,7 +127,7 @@ class cloud_classifier(cloud_trainer, data_handler):
     ######################    PIPELINE  ######################################
     ##########################################################################
 
-    def run_training_pipeline(self, verbose = True, create_filelist = True, evaluation = False, create_training_data = False):
+    def run_training_pipeline(self, verbose = True, create_filelist = True, evaluation = False, create_training_data = True):
         if (create_filelist):
             if (evaluation):
                 self.create_split_training_filelist()
@@ -405,9 +404,10 @@ class cloud_classifier(cloud_trainer, data_handler):
 
     ### evaluation
     def create_split_training_filelist(self):
-        datasets =  self.generate_filelist_from_folder(self.data_source_folder)
         satFile_pattern = fh.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
+        labFile_pattern = fh.get_filename_pattern(self.label_file_structure, self.timestamp_length)
+        datasets =  fh.generate_filelist_from_folder(self.data_source_folder, satFile_pattern, labFile_pattern)
 
-        self.training_sets, self.evaluation_sets, self.timestamps = self.split_sets(datasets, satFile_pattern, 24, timesensitive = True)
+        self.training_sets, self.evaluation_sets, self.timestamps = fh.split_sets(datasets, satFile_pattern, 24, timesensitive = True)
         self.input_files = [s[0] for s in self.evaluation_sets]
         self.save_project_data()

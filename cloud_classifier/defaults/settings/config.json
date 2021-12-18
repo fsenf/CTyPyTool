@@ -7,6 +7,9 @@
     "feature_preselection": false,
     "max_features": null,
     "min_samples_split" : 2,
-    "merge_list" : []
+    "merge_list" : [],
+    "difference_vectors": true,
+    "original_values": true,
+    "samples": 100
 
 }

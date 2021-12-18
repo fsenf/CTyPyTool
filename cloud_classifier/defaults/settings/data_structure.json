@@ -22,9 +22,5 @@
     "nwcsaf_out_version": "v2018",
     "hours": [
         0
-    ],
-    "difference_vectors": true,
-    "original_values": true,
-    "samples": 100
-
+    ]
 }
