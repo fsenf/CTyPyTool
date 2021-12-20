@@ -381,7 +381,7 @@ class cloud_classifier(cloud_trainer, data_handler):
 
 
     def create_input_vectors(self, file, verbose = True):
-        vectors, indices = super().create_test_vectors(file)
+        vectors, indices = super().create_input_vectors(file)
         if(verbose):
                 print("Input vectors created!")
         return vectors, indices

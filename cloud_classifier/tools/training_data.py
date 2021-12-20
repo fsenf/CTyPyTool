@@ -1,6 +1,8 @@
 import xarray as xr
 import random
 import numpy as np
+import time
+import tools.nwcsaf_tools as nwc
 
 
 """
@@ -9,6 +11,7 @@ Adds helper-methods for extracting machine learining data from NETCDF datasets
 
 
 def sample_training_sets(training_sets, n, hours, indices, input_channels,  ct_channel = "CT", verbose = False):
+    start = time.time()
     """
     Creates a sample of training vectors from NETCDF datasets
 
@@ -62,6 +65,7 @@ def sample_training_sets(training_sets, n, hours, indices, input_channels,  ct_c
         # append labels
         training_labels = np.append(training_labels, labels, axis = 0)
 
+    print("sampling took " + str(time.time()-start) + " seconds")
     return training_vectors, training_labels
 
 
@@ -147,5 +151,25 @@ def clean_test_vectors(vectors, indices):
     if (d>0):
         print("Removed " + str(d) + " vectors for containig 'Nan' values")
     return vectors[valid], np.array([indices[0][valid], indices[1][valid]])
+
+
+
+def translate_mergeList(merge_list):
+    _, indices, labels = nwc.definde_NWCSAF_variables()
+    intLabel = [int(i) for i in indices]
+    merge_ints = []
+    for merge_pair in merge_list:
+        l1 = labels.index(merge_pair[0]) 
+        l2 = labels.index(merge_pair[1])
+        merge_ints.append([intLabel[l1],intLabel[l2]])
+    return merge_ints
+
+
+def merge_labels(labels, merge_list):
+    if (merge_list):
+        ĺabels = np.array(labels)
+        merge_ints = translate_mergeList(merge_list)
+        for merge_pair in merge_ints:
+            labels[labels == merge_pair[0]] = merge_pair[1]
 
 

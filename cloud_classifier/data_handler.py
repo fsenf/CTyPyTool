@@ -15,6 +15,7 @@ import cartopy.crs as ccrs
 
 import tools.training_data as td
 import tools.file_handling as fh
+import tools.nwcsaf_tools as nwc
 import base_class
 import tools.confusion as conf
 
@@ -22,6 +23,7 @@ import tools.confusion as conf
 import importlib
 importlib.reload(td)
 importlib.reload(fh)
+importlib.reload(nwc)
 
 from base_class import base_class
 from cloud_trainer import cloud_trainer
@@ -154,82 +156,8 @@ class data_handler(base_class):
             self.nwcsaf_in_version = self.check_nwcsaf_version(labels, verbose = False)
         
         labels = fh.switch_nwcsaf_version(labels, self.nwcsaf_out_version, self.nwcsaf_in_version)
-
+        td.merge_labels(labels, self.merge_list)
         return vectors, labels
-
-
-
-
-    def check_nwcsaf_version(self, labels = None, filename = None, verbose = True):
-        """
-        Checks if a set of labels follows the 2013 or 2016 standard.
-
-
-        Parameters
-        ----------
-        labels : array like
-            Array of labels
-
-        set_value : bool
-            If true the flag for the ncwsaf version of the input data is set accordingly
-        
-        Returns
-        -------
-        string or None
-            String naming the used version or None if version couldnt be determined
-        """
-        if (labels is None and filename is None):
-            raise  ValueError("Label or filename must be specified")
-        if (labels is None):
-            labels = td.extract_labels(filename = filename, ct_channel = self.cloudtype_channel)
-            
-        r = fh.check_nwcsaf_version(labels)
-        if(verbose):
-            if (r is None):
-                print("Could not determine ncwsaf version of the labels")
-            else:
-                if (r == "v2018"):
-                    print("The cloud type data is coded after the new (2018) standard")
-                if (r == "v2013"):
-                    print("The cloud type data is coded after the old (2013) standard")
-        return r
-
-
-
-    def create_test_vectors(self, filename, hour=0):
-        """
-        Extracts feature vectors from given NETCDF file at a certain hour.
-
-
-        Parameters
-        ----------
-        filename : string
-            Filename of the sattelite data
-
-        hour : int
-            0-23, hour of the day at which the data set is read
-
-        Returns
-        -------
-        tuple of numpy arrays
-            Array containig the test vectors and another array containing the indices those vectors belong to
-
-        """
-        sat_data = xr.open_dataset(filename)
-        indices = self.masked_indices
-        if (indices is None):
-            # get all non-nan indices from the first layer specified in input channels
-            indices = np.where(~np.isnan(sat_data[self.input_channels[0]][0]))
-            print("No mask indices given, using complete data set")
-
-        vectors = td.extract_feature_vectors(sat_data, indices, hour, self.input_channels)
-        vectors, indices = td.clean_test_vectors(vectors, indices)
-        if (self.difference_vectors):
-            vectors = td.create_difference_vectors(vectors, self.original_values)
-
-        return vectors, indices
-
-
 
 
     def extract_labels(self, filename, indices = None, hour = 0):
@@ -269,8 +197,45 @@ class data_handler(base_class):
 
         if (self.nwcsaf_in_version is not self.nwcsaf_out_version):
             labels = fh.switch_nwcsaf_version(labels, self.nwcsaf_out_version)
-
+        td.merge_labels(labels, self.merge_list)
         return labels
+
+
+
+    def create_input_vectors(self, filename, hour=0):
+        """
+        Extracts feature vectors from given NETCDF file at a certain hour.
+
+
+        Parameters
+        ----------
+        filename : string
+            Filename of the sattelite data
+
+        hour : int
+            0-23, hour of the day at which the data set is read
+
+        Returns
+        -------
+        tuple of numpy arrays
+            Array containig the test vectors and another array containing the indices those vectors belong to
+
+        """
+        sat_data = xr.open_dataset(filename)
+        indices = self.masked_indices
+        if (indices is None):
+            # get all non-nan indices from the first layer specified in input channels
+            indices = np.where(~np.isnan(sat_data[self.input_channels[0]][0]))
+            print("No mask indices given, using complete data set")
+
+        vectors = td.extract_feature_vectors(sat_data, indices, hour, self.input_channels)
+        vectors, indices = td.clean_test_vectors(vectors, indices)
+        if (self.difference_vectors):
+            vectors = td.create_difference_vectors(vectors, self.original_values)
+
+        return vectors, indices
+
+
 
 
     def make_xrData(self, labels, indices, reference_file = None, NETCDF_out = None, 
@@ -332,15 +297,18 @@ class data_handler(base_class):
  
 
 
-    def save_filelist(self, filename):
-        """
+    # def save_filelist(self, filename):
+    #     """
 
-        """
-        dump(self.training_sets, filename)
+    #     """
+    #     dump(self.training_sets, filename)
 
 
     def save_mask_indices(self, filename):
         dump(self.masked_indices, filename)
+
+
+
 
 
 
@@ -395,6 +363,41 @@ class data_handler(base_class):
 
 
 
+    def check_nwcsaf_version(self, labels = None, filename = None, verbose = True):
+        """
+        Checks if a set of labels follows the 2013 or 2016 standard.
+
+
+        Parameters
+        ----------
+        labels : array like
+            Array of labels
+
+        set_value : bool
+            If true the flag for the ncwsaf version of the input data is set accordingly
+        
+        Returns
+        -------
+        string or None
+            String naming the used version or None if version couldnt be determined
+        """
+        if (labels is None and filename is None):
+            raise  ValueError("Label or filename must be specified")
+        if (labels is None):
+            labels = td.extract_labels(filename = filename, ct_channel = self.cloudtype_channel)
+            
+        r = fh.check_nwcsaf_version(labels)
+        if(verbose):
+            if (r is None):
+                print("Could not determine ncwsaf version of the labels")
+            else:
+                if (r == "v2018"):
+                    print("The cloud type data is coded after the new (2018) standard")
+                if (r == "v2013"):
+                    print("The cloud type data is coded after the old (2013) standard")
+        return r
+
+
 
 
 
@@ -410,7 +413,7 @@ class data_handler(base_class):
         subplot = False, pos = None, colorbar = False, cb_pos = 0.95):
 
         if (mode == "label"):
-            ct_colors, ct_indices, ct_labels = fh.definde_NWCSAF_variables()
+            ct_colors, ct_indices, ct_labels = nwc.definde_NWCSAF_variables()
             cmap = plt.matplotlib.colors.ListedColormap(ct_colors)
             vmin = 1
             vmax = 15
@@ -536,6 +539,8 @@ class data_handler(base_class):
             plt.show()
         plt.close()
 
+
+
     def get_plotable_data(self, input_data = None, data_file = None, georef_file = None, 
             reduce_to_mask = True, get_coords = True, mode = "label"):
         """
@@ -566,8 +571,9 @@ class data_handler(base_class):
         out_data[:] = np.nan
         data = np.array(data)[indices[0], indices[1]]
         out_data[indices[0],indices[1]] = data
-        out_data = fh.switch_nwcsaf_version(out_data, target_version = 'v2018')
-            
+        if (mode == "label"):
+            out_data = fh.switch_nwcsaf_version(out_data, target_version = 'v2018')
+            td.merge_labels(out_data, self.merge_list)
         if(not get_coords):
             return out_data
         else:
@@ -582,7 +588,6 @@ class data_handler(base_class):
                 y = georef.coords['lat']
 
             return out_data, x, y
-
 
 
     def plot_coocurrence_matrix(self, label_file, truth_file, normalize=True):

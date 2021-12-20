@@ -4,6 +4,7 @@ import itertools
 import pandas as pd
 import warnings
 
+import tools.nwcsaf_tools as nwc
 import tools.file_handling as fh
 from matplotlib.colors import LinearSegmentedColormap
 
@@ -28,7 +29,7 @@ def plot_coocurrence_matrix(label_data,
     fig = plt.figure(figsize=(12,12))
     fig.patch.set_alpha(1)
 
-    _,_,ct_labels = fh.definde_NWCSAF_variables(missing_indices)
+    _,_,ct_labels = nwc.definde_NWCSAF_variables(missing_indices)
     gen_titel = None
     if normalize:
         with warnings.catch_warnings():
@@ -95,7 +96,7 @@ def confusion_matrix(label_data, ground_truth, missing_indices = None):
     """
 
     d1, d2 = fh.clean_eval_data(label_data, ground_truth)
-    _, ct_indices,_ = fh.definde_NWCSAF_variables(missing_indices)
+    _, ct_indices,_ = nwc.definde_NWCSAF_variables(missing_indices)
     ct_indices = [int(i) for i in ct_indices]
 
     cm = np.zeros([len(ct_indices), len(ct_indices)],dtype = int)
