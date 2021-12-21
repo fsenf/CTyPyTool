@@ -7,6 +7,12 @@ This tools is intended to help weather forecasters in assessing the quality of t
 * It uses standard machine learning techniques, e.g. tree & random forest classifier
 * It can be applied to so-called synthetic satellite data (observsation-equivalents derived from numerical forecast data).
 
+**Schematic**
+
+![](docs/images/ctypytools-slide.jpg)
+
+
+
 ## Installation 
 
 ### On your Local Computer
@@ -39,3 +45,17 @@ See [here](docs/Running_Notebooks_on_DKRZ_JupyterHub.md) to get started with `CT
 There are severeal Jupyter Notebooks explaining the basic steps for training and applying the cloud classifier.
 
 For using an already trained classifier check out [this notebook](notebooks/Application_of_a_pretrained_classifier.ipynb)
+
+## Contributing
+
+Your Contribution is very welcome! Yo could either contribute with:
+
+* providing pre-trained classifiers for a specifically defined geographical region or for certain sessions
+* reporting issues, missing features or bugs
+* improving code
+
+**4 Steps for source code developers**:
+1. fork the `devel` branch
+2. update source code / software parts in your fork
+3. check functionality with example notebooks
+4. make a pull request onto the `devel` branch in the "official" repository under https://github.com/fsenf/CTyPyTool
