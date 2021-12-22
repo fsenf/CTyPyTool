@@ -27,30 +27,33 @@ This description is developed for the application of our cloud classification to
 * **Get the git repository** (using `git clone`)
 
     ```
-    > git clone https://github.com/rudegrass/cloud_classification.git
-    Cloning into 'cloud_classification'...
-    remote: Enumerating objects: 483, done.
-    remote: Counting objects: 100% (483/483), done.
-    remote: Compressing objects: 100% (294/294), done.
-    remote: Total 483 (delta 241), reused 409 (delta 167), pack-reused 0
-    Receiving objects: 100% (483/483), 11.21 MiB | 19.20 MiB/s, done.
-    Resolving deltas: 100% (241/241), done.``` 
+    > clone https://github.com/fsenf/CTyPyTool.git
+    Cloning into 'CTyPyTool'...
+    remote: Enumerating objects: 587, done.
+    remote: Counting objects: 100% (587/587), done.
+    remote: Compressing objects: 100% (270/270), done.
+    remote: Total 587 (delta 296), reused 581 (delta 294), pack-reused 0
+    Receiving objects: 100% (587/587), 12.80 MiB | 19.00 MiB/s, done.
+    Resolving deltas: 100% (296/296), done.
     ``` 
     Perfect! The source is there!
-    
+
+<!---    
 * **Temporary Step-Back as Bugfix**: The considered Notebooks run with a certain version of the software. We step back to this version. For newer version, bugfixes need to be implemented first.
 
     ```
     git checkout  a031547941e05c5da3e449123cc8a -B step-back
     ```
     Thus, we go back in history, check out a certain commit (starting with `a031 ...` and then give this a new branch name `step-back`)
+--->
 
-* **Install dependencies**
+* **Look at dependencies**
 
     * The `PipFile` only names `numpy` & `request` as dependencies, see
 
         ```
-         > cat Pipfile
+        > cd CTyPyTool
+        > cat Pipfile
         ...
 
         [packages]
@@ -63,94 +66,105 @@ This description is developed for the application of our cloud classification to
         python_version = "3.8"
         ``` 
         
-        Both might be part of the standard anaconda env. We ignore the dependencies, here.
+        Both might be part of the standard anaconda env. We ignore the dependencies, here. You might need to install the packages an other platforms.
+
+        The list of dependencies also looks a bit incomplete (TODO: check all loaded modules!)
        
 
-## Run Test Cases with a Pretrained Classifier
+## Application 1: Run Example Cases with a Pretrained Tree Classifier
 
 ### Download Data and Classifier
 
-* go to classication tool directory and make a download folder
+* make a download folder (we assume that you are already in the `CTyPyTool` directory)
 
     ```
-    cd cloud_classification
     mkdir download
     cd download
     ```
 
-* start the download of zips with (command generate by swiftbrowser)
+* start the download of zips with (currently located on swiftbrowser; later this will move on zenodo)
 
     ```
-    wget -r -H -N --cut-dirs=3 --content-disposition -I "/v1/" "https://swiftbrowser.dkrz.de/tcl_objects/2022-05-01T09:29:56Z/r_db907a4d5abc7b6fba06b617ffc39153e1e7b80f/w_c44c1a86d8898dda37bdd760bc340eb62292bd24/dkrz_d7550ef1-c227-4463-a6a7-29c14dc05fde/cloud_typing_project/0/classifier/?show_all"
+    wget -r -H -N --cut-dirs=3 --content-disposition --no-directories -I "/v1/" "https://swiftbrowser.dkrz.de/tcl_objects/2022-05-01T09:29:56Z/r_db907a4d5abc7b6fba06b617ffc39153e1e7b80f/w_c44c1a86d8898dda37bdd760bc340eb62292bd24/dkrz_d7550ef1-c227-4463-a6a7-29c14dc05fde/cloud_typing_project/0/classifier/?show_all"
     ```
 
-    The `*zip` Files contain pretrained classifiers.
+    The `*zip` Files contain pretrained classifiers. The `index.html?show_all` also comes along but is not needed.
     
 * let us extract the tree classifier
 
     ```
-    > unzip -d ../classifiers tree.zip
-    Archive:  tree.zip
+    > unzip -d ../classifiers TreeClassifier.zip
+    Archive:  TreeClassifier.zip
        creating: ../classifiers/TreeClassifier/
        creating: ../classifiers/TreeClassifier/data/
-      inflating: ../classifiers/TreeClassifier/data/classifier
-      inflating: ../classifiers/TreeClassifier/data/training_data
-      inflating: ../classifiers/TreeClassifier/data/label_reference.nc
-       creating: ../classifiers/TreeClassifier/labels/
-       creating: ../classifiers/TreeClassifier/settings/
-      inflating: ../classifiers/TreeClassifier/settings/data_structure.json
-      inflating: ../classifiers/TreeClassifier/settings/config.json
+      inflating: ../classifiers/TreeClassifier/data/classifier  
+      inflating: ../classifiers/TreeClassifier/data/label_reference.nc  
+      inflating: ../classifiers/TreeClassifier/data/training_data  
        creating: ../classifiers/TreeClassifier/filelists/
-      inflating: ../classifiers/TreeClassifier/filelists/evaluation_sets.json
-      inflating: ../classifiers/TreeClassifier/filelists/training_sets.json
-      inflating: ../classifiers/TreeClassifier/filelists/label_files.json
-      inflating: ../classifiers/TreeClassifier/filelists/input_files.json
+      inflating: ../classifiers/TreeClassifier/filelists/evaluation_sets.json  
+      inflating: ../classifiers/TreeClassifier/filelists/input_files.json  
+      inflating: ../classifiers/TreeClassifier/filelists/label_files.json  
+      inflating: ../classifiers/TreeClassifier/filelists/training_sets.json  
+       creating: ../classifiers/TreeClassifier/labels/
+      inflating: ../classifiers/TreeClassifier/labels/nwcsaf_msevi-medi-20190317_1800_predicted.nc  
+      inflating: ../classifiers/TreeClassifier/labels/nwcsaf_msevi-medi-20190318_1100_predicted.nc  
+       creating: ../classifiers/TreeClassifier/settings/
+      inflating: ../classifiers/TreeClassifier/settings/config.json  
+      inflating: ../classifiers/TreeClassifier/settings/data_structure.json  
     ``` 
+    
     Nice!
     
-* Copy NWCSAF & Meteosat Data & Georef
-    * Prepare data structure:
+* Get NWCSAF & Meteosat Data & Georef for Running the Examples
+    * Extract the data:
         ```
-        > cd ..
-        > mkdir -p data/prediction_data
-        > mkdir -p data/training_data
+        > unzip -d .. data.zip
+        Archive:  data.zip
+           creating: ../data/
+           creating: ../data/auxilary_files/
+          inflating: ../data/auxilary_files/lsm_mask_medi.nc  
+          inflating: ../data/auxilary_files/msevi-medi-georef.nc  
+          inflating: ../data/auxilary_files/msevi_georef.nc  
+           creating: ../data/example_data/
+          inflating: ../data/example_data/msevi-medi-20190317_1800.nc  
+          inflating: ../data/example_data/msevi-medi-20190318_1100.nc  
+          inflating: ../data/example_data/nwcsaf_msevi-medi-20190317_1800.nc  
+          inflating: ../data/example_data/nwcsaf_msevi-medi-20190318_1100.nc  
         ```
+       
+     * On the content:   
+        ``` 
+        > cd ../data
+        > tree
+        .
+        |-- auxilary_files
+        |   |-- lsm_mask_medi.nc
+        |   |-- msevi-medi-georef.nc
+        |   `-- msevi_georef.nc
+        `-- example_data
+            |-- msevi-medi-20190317_1800.nc
+            |-- msevi-medi-20190318_1100.nc
+            |-- nwcsaf_msevi-medi-20190317_1800.nc
+            `-- nwcsaf_msevi-medi-20190318_1100.nc
         
-    * Get Georef:
+        2 directories, 7 files
+        ```
 
-        ```
-        > cp ~/data/meteosat-seviri/subregions/medi/lsm_mask_medi.nc data/training_data
-        ```
-        
-    * Get Meteosat & NWCSAF Data: We copy data from the local directory (TODO: From swiftbrowser would be much more elegant!).
-    
-        ```
-        > cp ~/data/meteosat-seviri/subregions/medi/*msevi-medi-20190318_1100.nc data/prediction_data
-        > cp ~/data/meteosat-seviri/subregions/medi/*msevi-medi-20190317_1800.nc data/prediction_data
-        ```
-        
-        Now, the data tree looks like:
-        
-        ```
-        > tree data/
-        data/
-        ├── prediction_data
-        │   ├── msevi-medi-20190317_1800.nc
-        │   ├── msevi-medi-20190318_1100.nc
-        │   ├── nwcsaf_msevi-medi-20190317_1800.nc
-        │   └── nwcsaf_msevi-medi-20190318_1100.nc
-        └── training_data
-            └── lsm_mask_medi.nc
+        OK, the downloaded data contains a land-sea mask and a georeference in `auxilary_files/` plus two Meteosat and NWCSAF cloud typing files for the Mediterranean region in `example_data/`.
+ 
+### Run The Tests on JupyterHub
 
-        2 directories, 5 files
+For the application 1 we will work with the notebook `Application_of_a_pretrained_classifier.ipynb` which shows how a pre-trained classifier is loaded and applied to example data.
 
-        ```
-### Run The Tests
-* Notebook `Application_of_a_pretrained_classifier.ipynb`
-    * go to the JupyterHub browser tab and navigate to the `notebooks` directory
-    * open the notebook `Application_of_a_pretrained_classifier.ipynb` and chosen a Python kernel (the default would be `python3/unstable`)
-         ![](images/Running_Notebooks_on_DKRZ_JupyterHub-03.png)
-    * finally run the notebook and watch out for errors!
+
+Go through the following steps:
+
+1. go to the JupyterHub browser tab and navigate to the `notebooks` directory
+
+2. open the notebook `Application_of_a_pretrained_classifier.ipynb` and chosen a Python kernel (the default would be `python3/unstable`)
+    ![](images/Running_Notebooks_on_DKRZ_JupyterHub-03.png)
+
+3. finally run the notebook and watch out for errors!
 
     
 ---
