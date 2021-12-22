@@ -166,5 +166,91 @@ Go through the following steps:
 
 3. finally run the notebook and watch out for errors!
 
+
+## Application 2: Change to a Forest Classifier and Run the Examples Again
+
+
+### Get the Forest Classifier Data
+
+We assume that executed all steps mentioned above and that you 
+* already downloaded the forest classifier 
+* like to apply the forest classifier on the same example data
+* and now went back to your `download` directory with the content:
+```
+> tree
+.
+|-- ForestClassifier.zip
+|-- TreeClassifier.zip
+`-- data.zip
+
+0 directories, 3 files
+```
+
+* For extracting the Forest Classifier, run:
+    ```
+    > unzip -d ../classifiers ForestClassifier.zip 
+    Archive:  ForestClassifier.zip
+       creating: ../classifiers/ForestClassifier/
+       creating: ../classifiers/ForestClassifier/data/
+      inflating: ../classifiers/ForestClassifier/data/classifier  
+      inflating: ../classifiers/ForestClassifier/data/label_reference.nc  
+      inflating: ../classifiers/ForestClassifier/data/training_data  
+       creating: ../classifiers/ForestClassifier/filelists/
+      inflating: ../classifiers/ForestClassifier/filelists/evaluation_sets.json  
+      inflating: ../classifiers/ForestClassifier/filelists/input_files.json  
+      inflating: ../classifiers/ForestClassifier/filelists/label_files.json  
+      inflating: ../classifiers/ForestClassifier/filelists/training_sets.json  
+       creating: ../classifiers/ForestClassifier/labels/
+      inflating: ../classifiers/ForestClassifier/labels/nwcsaf_msevi-medi-20190317_1800_predicted.nc  
+      inflating: ../classifiers/ForestClassifier/labels/nwcsaf_msevi-medi-20190318_1100_predicted.nc  
+       creating: ../classifiers/ForestClassifier/settings/
+      inflating: ../classifiers/ForestClassifier/settings/config.json  
+      inflating: ../classifiers/ForestClassifier/settings/data_structure.json  
+    ```
+
+* Prepations on JupyterHub:
+
+    * Goto to your JuypterHub browser tab and select the checkbox of the notebook `Application_of_a_pretrained_classifier.ipynb`
+    * Press the "Duplicate" button - you get a copy of this notebook
+    * Click on the copy - it will open in a new browser tab
+    * Rename the notebook e.g. to "Test_the_Forest_Classifier_Example" - click on the title on the top row, just right to the DKRZ logo
+
+* Testing the forest classifier notebook:
     
+    * apply the following modifications:
+        1. Replace line in "In [3]:" 
+        
+        from
+        ```python
+        path = "../classifiers/TreeClassifier"
+        ```
+        to
+         ```python
+        path = "../classifiers/ForestClassifier"
+        ```
+
+        2. Replace line in "In [9]:"
+        
+        from
+        ```
+        ls ../classifiers/TreeClassifier/labels 
+        ```
+    
+        to 
+        ```
+        ls ../classifiers/ForestClassifier/labels
+        ```
+
+    * press the run button and watch out for errors.
+
+This takes slightly longer. I might change the descriptive text in markdown for your own reference.
+
+
+## Application 3: Examples for Plotting Classifier Labels  
+
+Plotting of labels and some rudimetary statistics is performed in the notebook `Plotting_of_example_data.ipynb`
+
+If both prior application examples on the application of a pre-trained tree and forest classifier went well, then you just need to start the notebook `Plotting_of_example_data.ipynb` in your JupyterHub (selecting the default kernel) and run it. That`s it ...
+
+
 ---
