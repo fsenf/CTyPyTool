@@ -17,7 +17,14 @@ CTyPyTool: A Cloud Typing Python Tool for Verification of Weather Forecasts
    
    source/README.md
    
-   
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Getting Started
+
+   Running_Notebooks_on_DKRZ_JupyterHub.md
+
+
 .. toctree::
    :maxdepth: 1
    :caption: Examples
