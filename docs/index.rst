@@ -3,13 +3,27 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to CTyPyTool's documentation!
-=====================================
+CTyPyTool: A Cloud Typing Python Tool for Verification of Weather Forecasts
+=============================================================================
+
+
+.. image:: images/ctypytools-slide.jpg
+    :alt: The concept of CTyPyTool
+
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
+   :maxdepth: 1
+   :caption: Intro
+   
+   source/README.md
+   
+   
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
+   
+   source/Application_of_a_pretrained_classifier.ipynb
+   source/Plotting_of_example_data.ipynb
 
 
 Indices and tables
