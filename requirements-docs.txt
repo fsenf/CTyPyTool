@@ -1,0 +1,8 @@
+sphinx>=1.4
+linkify-it-py
+myst-parser
+sphinx_rtd_theme
+nbsphinx
+sphinx-markdown-tables
+pandoc
+IPython
