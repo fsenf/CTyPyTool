@@ -69,18 +69,19 @@ class cloud_classifier(cloud_trainer, data_handler):
 
         if (path is None):
             path = os.getcwd()
-
         folder = os.path.join(path, name)
         if (os.path.isdir(folder)):
-            print("Folder with given name already exits")
+            print("Folder with given name already exits!")
         else:
             try:
                 shutil.copytree(self.default_path, folder)
+                print("Project folder created succefully!")
 
             except Exception:
-                print("Could not initalize project settings at given location")
+                print("Could not initalize project settings at given location!")
                 return 0
         self.load_project(folder)
+
 
 
     def load_project(self, path):
