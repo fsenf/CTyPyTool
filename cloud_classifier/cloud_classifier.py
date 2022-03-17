@@ -3,7 +3,7 @@ import os
 import numpy as np
 import shutil
 import re
-from pathlib import Path
+import pathlib
 
 import cloud_trainer as ct
 import data_handler as dh
@@ -214,7 +214,7 @@ class cloud_classifier(cloud_trainer, data_handler):
 
 
     def save_comparePlot(self, label_file, truth_file, timestamp, compare_projects= None,
-        plot_titles = None, verbose = True, show = True):
+            plot_titles = None, verbose = True, show = True):
 
         all_files = [label_file]
         filename = os.path.split(label_file)[1]
@@ -222,46 +222,44 @@ class cloud_classifier(cloud_trainer, data_handler):
             path = os.path.join(proj_path, "labels", filename)
             all_files.append(path)
 
-        path = os.path.join("plots", "Comparisons")
-        fh.create_subfolders(path, self.project_path)
-        hour = int(timestamp[-4:-2])
-
         filename = timestamp + "_ComparisonPlot.png"
-        path = os.path.join(self.project_path, path, filename)
+        path = os.path.join(self.project_path, "plots", "Comparisons", filename)
+        fh.create_subfolders(path, self.project_path)
+
+        hour = int(timestamp[-4:-2])
         self.plot_multiple(all_files, truth_file, georef_file = self.georef_file, reduce_to_mask = True,
             plot_titles = plot_titles, hour = hour, save_file = path, show = show)
         if (verbose):
             print("Comparison Plot saved at " + path)
 
-        
-    def save_probasPlot(self, label_file, truth_file, timestamp, 
-        plot_titles = None, verbose = True, show = True, filename = None):
-        
-        path = os.path.join("plots", "Probabilities")
-        fh.create_subfolders(path, self.project_path)
-        hour = int(timestamp[-4:-2])
+
+    def save_probasPlot(self, label_file, truth_file, timestamp,
+            plot_titles = None, verbose = True, show = True, filename = None):
+
 
         if (filename is None):
             filename = timestamp + "_ProbabilityPlot.png"
-        path = os.path.join(self.project_path, path, filename)
+        path = os.path.join(self.project_path, "plots", "Probabilities", filename)
+        fh.create_subfolders(path, self.project_path)
 
+        hour = int(timestamp[-4:-2])
         self.plot_probas(label_file, truth_file, georef_file = self.georef_file, reduce_to_mask = True,
             plot_titles = plot_titles, hour = hour, save_file = path, show = show)
         if (verbose):
             print("Probability Plot saved at " + path)
 
 
-    def save_coorMatrix(self, label_file = None, truth_file = None, 
-        label_data = None, truth_data = None,
-        timestamp = None, filename = None,
-        normalize = True, verbose = True, show = True):
+    def save_coorMatrix(self, label_file = None, truth_file = None,
+            label_data = None, truth_data = None,
+            timestamp = None, filename = None,
+            normalize = True, verbose = True, show = True):
 
         if (truth_file is None and truth_data is None):
-                raise ValueError("'truth_file' or 'truth_data' be specified!")
+            raise ValueError("'truth_file' or 'truth_data' be specified!")
         if (label_file is None and label_data is None):
-                raise ValueError("'label_file' or 'label_data' be specified!")
+            raise ValueError("'label_file' or 'label_data' be specified!")
         if (filename is None and timestamp is None):
-                raise ValueError("'filename' or 'timestamp' be specified!")
+            raise ValueError("'filename' or 'timestamp' be specified!")
 
         if (filename is None):
             filename = timestamp + "_CoocurrenceMatrix.png"
@@ -270,21 +268,12 @@ class cloud_classifier(cloud_trainer, data_handler):
         if(truth_data is None):
             truth_data = self.get_plotable_data(data_file = truth_file, reduce_to_mask = True, get_coords = False)
 
-        path = os.path.join("plots", "Coocurrence")
-        fh.create_subfolders(path, self.project_path)
-        filename = os.path.join(self.project_path, path, filename)
+        path = os.path.join(self.project_path, "plots", "Coocurrence", filename)
+        fh.create_subfolders(path)
 
-        conf.plot_coocurrence_matrix(label_data, truth_data, normalize=normalize, save_file = filename)
+        conf.plot_coocurrence_matrix(label_data, truth_data, normalize=normalize, save_file = path)
         if (verbose):
             print("Correlation Matrix saved at " + path, filename)
-
-
-
-
-
-
-
-
 
 
 
@@ -350,7 +339,7 @@ class cloud_classifier(cloud_trainer, data_handler):
     def set_reference_file(self, verbose = True):
         ref_path = os.path.join(self.project_path, "data", "label_reference.nc")
 
-        if Path(ref_path).is_file():
+        if pathlib.Path(ref_path).is_file():
             self.reference_file = ref_path
             if (verbose):
                 print("Reference file found")
@@ -397,6 +386,7 @@ class cloud_classifier(cloud_trainer, data_handler):
     def save_labels(self, labels, indices, sat_file, probas = None, verbose = True):
         name = fh.get_label_name(sat_file, self.sat_file_structure, self.label_file_structure, self.timestamp_length)
         filepath = os.path.join(self.project_path, "labels", name)
+        fh.create_subfolders(filepath)
         self.make_xrData(labels, indices, NETCDF_out = filepath, prob_data = probas)
         if(verbose):
             print("Labels saved as " + name )
