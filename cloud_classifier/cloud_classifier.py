@@ -71,7 +71,7 @@ class cloud_classifier(cloud_trainer, data_handler):
             path = os.getcwd()
         folder = os.path.join(path, name)
         if (os.path.isdir(folder)):
-            print("Folder with given name already exits!")
+            print("Folder with given name already exits! Keeping old project")
         else:
             try:
                 shutil.copytree(self.default_path, folder)
