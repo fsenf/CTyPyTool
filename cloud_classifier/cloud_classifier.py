@@ -75,7 +75,7 @@ class cloud_classifier(cloud_trainer, data_handler):
         else:
             try:
                 shutil.copytree(self.default_path, folder)
-                print("Project folder created succefully!")
+                print("Project folder created successfully!")
 
             except Exception:
                 print("Could not initalize project settings at given location!")
