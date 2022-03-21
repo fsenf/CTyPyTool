@@ -1,0 +1,5 @@
+classifiers/
+*__pycache*
+data/
+env/
+*ipynb_checkpoints/
