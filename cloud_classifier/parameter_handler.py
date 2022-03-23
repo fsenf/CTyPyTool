@@ -6,9 +6,9 @@ import os
 class parameter_handler:
     """
     Provides functionaltiy of parameter management for cloud-classifier projects.
-    Parameteres and filelists are provided as dictionaries, which are 
+    Parameteres and filelists are provided as dictionaries, which are
     initalized with default values.
-    Parameters and filelist can be loaded and saved in the file structure of 
+    Parameters and filelist can be loaded and saved in the file structure of
     a cloud classifier project
     """
 
@@ -81,7 +81,6 @@ class parameter_handler:
             "eval_timestamps": []
         }
 
-
         dirname = os.path.dirname(__file__)
         self.__default_path = os.path.join(dirname, "defaults")
 
@@ -90,15 +89,13 @@ class parameter_handler:
         self.read_settings(path=path)
 
 
-
-
     def set_parameters(self, **kwargs):
         self.parameters.update((k, v) for k, v in kwargs.items()
-            if k in self.parameters)
+                               if k in self.parameters)
 
     def set_filelists(self, **kwargs):
         self.filelists.update((k, v) for k, v in kwargs.items()
-            if k in self.filelists)
+                              if k in self.filelists)
 
     def extend_filelists(self, **kwargs):
         for k in self.filelists:
@@ -131,7 +128,7 @@ class parameter_handler:
         with open(filepath, 'r') as parameters:
             kwargs = json.load(parameters)
             dictionary.update((k, v) for k, v in kwargs.items()
-                if k in dictionary.keys())
+                              if k in dictionary.keys())
 
     def __save_data(self, dictionary, filepath):
         # read saved data
@@ -139,8 +136,8 @@ class parameter_handler:
             saved_data = json.load(outfile)
             # update saved data
             saved_data.update({k: dictionary[k] for k in saved_data.keys()
-                if k in dictionary})
-            json_obj = json.dumps(saved_data, indent = 4)
+                               if k in dictionary})
+            json_obj = json.dumps(saved_data, indent=4)
         # write json
         with open(filepath, 'w') as outfile:
             outfile.write(json_obj)
