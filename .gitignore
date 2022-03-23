@@ -3,3 +3,4 @@ classifiers/
 data/
 env/
 *ipynb_checkpoints/
+notebooks/test*.ipynb
