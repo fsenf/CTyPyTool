@@ -1,13 +1,15 @@
-import json
+from cloud_trainer import cloud_trainer
+from data_handler import data_handler
+
+import parameter_handler
+
 import os
 import numpy as np
 import shutil
-import re
 import pathlib
 
 import cloud_trainer as ct
 import data_handler as dh
-import base_class as bc
 
 import tools.file_handling as fh
 import tools.confusion as conf
@@ -16,43 +18,19 @@ import tools.confusion as conf
 import importlib
 importlib.reload(ct)
 importlib.reload(dh)
-importlib.reload(bc)
 importlib.reload(fh)
 
-from cloud_trainer import cloud_trainer
-from data_handler import data_handler
-from base_class import base_class
-from joblib import dump, load
-
-
 class cloud_classifier(cloud_trainer, data_handler):
-    """
     
-    bla PIPELINE
+    def __init__(self):
+        self.__project_path = None
+        self.__param_handler = parameter_handler
 
-    """
-
-    def __init__ (self, **kwargs):
-
-
-        class_variables =  {
-            "input_source_folder",
-            "input_files",
-            "evaluation_sets",
-            "label_files",
-            "eval_timestamps"
-            }
-        self.project_path = None
-
-        super().init_class_variables(class_variables)
-        super().__init__(**kwargs)
+    # ############ CREATING, LOADING AND SAVING PROJECTS ######################
+    # ########################################################################
 
 
-
-    ############# CREATING, LOADING AND SAVING PROJECTS ######################
-    ##########################################################################
-
-    def create_new_project(self, name, path = None):
+    def create_new_project(self, name, path=None):
         """
         Creates a persistant classifier project.
 
@@ -62,16 +40,16 @@ class cloud_classifier(cloud_trainer, data_handler):
         name : string
             Name of the the project that will be created
 
-        path : string (Optional)
-            Path to the directory where the project will be stored. If none is given, 
-            the current working directory will be used.
+        path : string, optional
+            Path to the directory where the project will be stored. If none is
+            given, the current working directory will be used.
         """
 
         if (path is None):
             path = os.getcwd()
         folder = os.path.join(path, name)
         if (os.path.isdir(folder)):
-            print("Folder with given name already exits! Keeping old project")
+            print("Folder with given name already exits! Loading existing project!")
         else:
             try:
                 shutil.copytree(self.default_path, folder)
@@ -83,30 +61,29 @@ class cloud_classifier(cloud_trainer, data_handler):
         self.load_project(folder)
 
 
-
     def load_project(self, path):
         """
         Loads a persistant classifier project.
 
         Parameters
         ----------
-        path : string 
+        path : string
             Path to the stored project
-        """  
+        """
         self.project_path = path
         self.load_project_data()
+
+
+
 
 
     # def set_project_path(self, path):
     #     self.project_path = path
 
 
-    def load_project_data(self, path = None):
-        if (path is None):
-            path = self.project_path 
-        if (path is None):
+    def __load_project_data(self):
+        if (self.project_path is None):
             raise ValueError("Project path not set")
-        self.load_data(path)
 
     def save_project_data(self, path = None):
         if (path is None):

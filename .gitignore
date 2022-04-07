@@ -4,3 +4,5 @@ data/
 env/
 *ipynb_checkpoints/
 notebooks/test*.ipynb
+*sublime-workspace
+*sublime-project

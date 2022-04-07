@@ -1,4 +1,3 @@
-
 import json
 import os
 
@@ -34,6 +33,7 @@ class parameter_handler:
             "training_sets.json",
             "label_files.json",
         ]
+
 
         self.parameters = {
             "classifier_type": "Forest",
@@ -92,7 +92,6 @@ class parameter_handler:
     def set_parameters(self, **kwargs):
         self.parameters.update((k, v) for k, v in kwargs.items()
                                if k in self.parameters)
-
     def set_filelists(self, **kwargs):
         self.filelists.update((k, v) for k, v in kwargs.items()
                               if k in self.filelists)
