@@ -143,7 +143,7 @@ class data_handler(base_class):
         # Get vectors from all added training sets
         vectors, labels = td.sample_training_sets(training_sets, self.samples, self.hours, masked_indices, 
                                                 self.input_channels, self.cloudtype_channel, 
-                                                verbose = self.verbose)
+                                                verbose = False)
 
         # Remove nan values
         vectors, labels = td.clean_training_set(vectors, labels)
@@ -348,18 +348,6 @@ class data_handler(base_class):
         return v,l
 
 
-    def create_reference_file(self, input_file, output_file):
-        """
-        Reads a label file and creates a reference file with all meta data in order
-        to later use this as a template for writing predicted labels to file.
-        """
-        data = xr.open_dataset(input_file)
-        for key in data.keys():
-            if(not key == self.cloudtype_channel):
-                data =data.drop(key)
-
-        data.to_netcdf(path=output_file, mode ='w')
-        self.reference_file = output_file
 
 
 

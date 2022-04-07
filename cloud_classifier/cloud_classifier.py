@@ -1,7 +1,7 @@
 from cloud_trainer import cloud_trainer
 from data_handler import data_handler
 
-import parameter_handler
+from parameter_handler import parameter_handler
 
 import os
 import numpy as np
@@ -13,6 +13,7 @@ import data_handler as dh
 
 import tools.file_handling as fh
 import tools.confusion as conf
+import tools.write_netcdf as wnc
 
 
 import importlib
@@ -20,11 +21,13 @@ importlib.reload(ct)
 importlib.reload(dh)
 importlib.reload(fh)
 
+
 class cloud_classifier(cloud_trainer, data_handler):
-    
+
+
     def __init__(self):
         self.__project_path = None
-        self.__param_handler = parameter_handler
+        self.__param_handler = parameter_handler()
 
     # ############ CREATING, LOADING AND SAVING PROJECTS ######################
     # ########################################################################
@@ -75,35 +78,29 @@ class cloud_classifier(cloud_trainer, data_handler):
 
 
 
-
-
-    # def set_project_path(self, path):
-    #     self.project_path = path
-
-
-    def __load_project_data(self):
+    def load_project_data(self):
         if (self.project_path is None):
             raise ValueError("Project path not set")
 
     def save_project_data(self, path = None):
         if (path is None):
-            path = self.project_path 
+            path = self.project_path
         if (path is None):
             raise ValueError("Project path not set")
         self.save_data(path)
 
 
     def set_project_parameters(self, **kwargs):
-        self.set_parameters(**kwargs)
-        if(not self.project_path is None):
-            self.save_data(self.project_path)
-
-
+        self.__param_handler.set_parameters(**kwargs)
+        if (self.project_path is not None):
+            self.__param_handler.save_parameters(self.project_path)
 
 
 
     ######################    PIPELINE  ######################################
     ##########################################################################
+
+
 
     def run_training_pipeline(self, verbose = True, create_filelist = True, evaluation = False, create_training_data = True):
         if (create_filelist):
@@ -111,8 +108,7 @@ class cloud_classifier(cloud_trainer, data_handler):
                 self.create_split_training_filelist()
             else:
                 self.create_training_filelist(verbose = verbose)
-        if (self.reference_file is None):
-            self.create_reference_file()
+        wnc.create_reference_file(self.project_path, self.__param_handler)
         self.apply_mask(verbose = verbose)
         if(create_training_data):
             v,l = self.create_training_set(verbose = verbose)
@@ -304,24 +300,11 @@ class cloud_classifier(cloud_trainer, data_handler):
             print("Classifier created!")
 
 
-    def create_reference_file(self, input_file = None, verbose = True):
-        if (input_file is None):
-            if (self.training_sets is None):
-                raise ValueError("No reference file found")
-            input_file = self.training_sets[0][1]
-        output_file = os.path.join(self.project_path, "data", "label_reference.nc")
-        super().create_reference_file(input_file, output_file)
-        self.save_project_data()
 
-    def set_reference_file(self, verbose = True):
-        ref_path = os.path.join(self.project_path, "data", "label_reference.nc")
 
-        if pathlib.Path(ref_path).is_file():
-            self.reference_file = ref_path
-            if (verbose):
-                print("Reference file found")
-        else:
-            self.create_reference_file()
+
+
+
 
     ### predicting
     def extract_input_filelist(self, verbose = True):
