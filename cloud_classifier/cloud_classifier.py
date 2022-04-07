@@ -22,12 +22,13 @@ importlib.reload(dh)
 importlib.reload(fh)
 
 
-class cloud_classifier(cloud_trainer, data_handler):
+class cloud_classifier():
 
 
     def __init__(self):
         self.__project_path = None
         self.__param_handler = parameter_handler()
+        self.params = self.param_handler.parameters
 
     # ############ CREATING, LOADING AND SAVING PROJECTS ######################
     # ########################################################################
@@ -81,13 +82,15 @@ class cloud_classifier(cloud_trainer, data_handler):
     def load_project_data(self):
         if (self.project_path is None):
             raise ValueError("Project path not set")
+        self.__param_handler.load_parameters(self.project_path)
+        self.__param_handler.load_filelists(self.project_path)
 
-    def save_project_data(self, path = None):
-        if (path is None):
-            path = self.project_path
-        if (path is None):
+
+    def save_project_data(self):
+        if (self.project_path is None):
             raise ValueError("Project path not set")
-        self.save_data(path)
+        self.__param_handler.save_parameters(self.project_path)
+        self.__param_handler.save_filelists(self.project_path)
 
 
     def set_project_parameters(self, **kwargs):
@@ -102,7 +105,8 @@ class cloud_classifier(cloud_trainer, data_handler):
 
 
 
-    def run_training_pipeline(self, verbose = True, create_filelist = True, evaluation = False, create_training_data = True):
+    def run_training_pipeline(self, verbose = True, create_filelist = True, evaluation = False,
+                              create_training_data = True):
         if (create_filelist):
             if (evaluation):
                 self.create_split_training_filelist()
@@ -111,11 +115,12 @@ class cloud_classifier(cloud_trainer, data_handler):
         wnc.create_reference_file(self.project_path, self.__param_handler)
         self.apply_mask(verbose = verbose)
         if(create_training_data):
-            v,l = self.create_training_set(verbose = verbose)
-        else: 
-            v,l = self.load_training_set()
-        self.train_classifier(v,l, verbose = verbose)
-        self.save_project_data()
+            vec, lab = self.create_training_set(verbose = verbose)
+        else:
+            vec, lab = self.load_training_set()
+        self.train_classifier(vec, lab, verbose = verbose)
+
+        self.__param_handler.save_filelists(self.project_path)
 
 
     def run_prediction_pipeline(self, verbose = True, create_filelist = True, evaluation = False):
@@ -126,11 +131,11 @@ class cloud_classifier(cloud_trainer, data_handler):
         self.load_classifier(reload = True, verbose = verbose)
         self.apply_mask(verbose = verbose)
         self.set_reference_file(verbose = verbose)
-        self.label_files = []
-        for file in self.input_files:
+        label_files = []
+        for file in self.params["input_files"]:
             vectors, indices = self.create_input_vectors(file, verbose = verbose)
             probas = None
-            if(self.classifier_type == "Forest"):
+            if(self.params["classifier_type"] == "Forest"):
                 li = self.classifier.classes_
                 probas = self.get_forest_proabilties(vectors)
                 labels = [li[i] for i in np.argmax(probas, axis = 1)]
@@ -138,132 +143,20 @@ class cloud_classifier(cloud_trainer, data_handler):
                 labels = self.predict_labels(vectors, verbose = verbose)
 
             filename = self.save_labels(labels, indices, file, probas, verbose = verbose)
-            self.label_files.append(filename)
-
-
-        self.save_project_data()
-            #TODO: convert and save labels
-
-
-
-
-
-
-######################    Evaluation  ######################################
-############################################################################
-
-
-    def create_evaluation_plots(self, correlation = False, probas = False, comparison = False, 
-        cmp_targets = None, plot_titles = None, show = True, verbose = True):
-
-        for i in range(len(self.label_files)):
-            label_file = self.label_files[i]
-            truth_file = self.evaluation_sets[i][1]
-            timestamp = self.eval_timestamps[i]
-            if(correlation):
-                self.save_coorMatrix(label_file = label_file, truth_file = truth_file, timestamp = timestamp, 
-                    verbose=verbose, show = show)
-            if(comparison):
-                self.save_comparePlot(label_file = label_file, truth_file = truth_file, timestamp = timestamp, 
-                    compare_projects =cmp_targets, plot_titles=plot_titles,verbose=verbose, show = show)
-            if(probas):
-                self.save_probasPlot(label_file = label_file, truth_file = truth_file, timestamp = timestamp, 
-                    plot_titles=plot_titles, verbose=verbose, show = show)
-
-
-    def get_overallCoocurrence(self, show = False):
-        all_labels, all_truth = [], []
-        for i in range(len(self.label_files)):
-            label_file = self.label_files[i]
-            truth_file = self.evaluation_sets[i][1]
-            all_labels.append(self.get_plotable_data(data_file = label_file, get_coords = False))
-            all_truth.append(self.get_plotable_data(data_file = truth_file, get_coords = False))
-        all_labels, all_truth = fh.clean_eval_data(all_labels, all_truth)
-
-        self.save_coorMatrix( label_data = all_labels, truth_data = all_truth, filename = "Overall_CoocurrenceMatrix.png", show = show)
-
-
-
-
-
-    def save_comparePlot(self, label_file, truth_file, timestamp, compare_projects= None,
-            plot_titles = None, verbose = True, show = True):
-
-        all_files = [label_file]
-        filename = os.path.split(label_file)[1]
-        for proj_path in compare_projects:
-            path = os.path.join(proj_path, "labels", filename)
-            all_files.append(path)
-
-        filename = timestamp + "_ComparisonPlot.png"
-        path = os.path.join(self.project_path, "plots", "Comparisons", filename)
-        fh.create_subfolders(path, self.project_path)
-
-        hour = int(timestamp[-4:-2])
-        self.plot_multiple(all_files, truth_file, georef_file = self.georef_file, reduce_to_mask = True,
-            plot_titles = plot_titles, hour = hour, save_file = path, show = show)
-        if (verbose):
-            print("Comparison Plot saved at " + path)
-
-
-    def save_probasPlot(self, label_file, truth_file, timestamp,
-            plot_titles = None, verbose = True, show = True, filename = None):
-
-
-        if (filename is None):
-            filename = timestamp + "_ProbabilityPlot.png"
-        path = os.path.join(self.project_path, "plots", "Probabilities", filename)
-        fh.create_subfolders(path, self.project_path)
-
-        hour = int(timestamp[-4:-2])
-        self.plot_probas(label_file, truth_file, georef_file = self.georef_file, reduce_to_mask = True,
-            plot_titles = plot_titles, hour = hour, save_file = path, show = show)
-        if (verbose):
-            print("Probability Plot saved at " + path)
-
-
-    def save_coorMatrix(self, label_file = None, truth_file = None,
-            label_data = None, truth_data = None,
-            timestamp = None, filename = None,
-            normalize = True, verbose = True, show = True):
-
-        if (truth_file is None and truth_data is None):
-            raise ValueError("'truth_file' or 'truth_data' be specified!")
-        if (label_file is None and label_data is None):
-            raise ValueError("'label_file' or 'label_data' be specified!")
-        if (filename is None and timestamp is None):
-            raise ValueError("'filename' or 'timestamp' be specified!")
-
-        if (filename is None):
-            filename = timestamp + "_CoocurrenceMatrix.png"
-        if(label_data is None):
-            label_data = self.get_plotable_data(data_file = label_file, reduce_to_mask = True, get_coords = False)
-        if(truth_data is None):
-            truth_data = self.get_plotable_data(data_file = truth_file, reduce_to_mask = True, get_coords = False)
-
-        path = os.path.join(self.project_path, "plots", "Coocurrence", filename)
-        fh.create_subfolders(path)
-
-        conf.plot_coocurrence_matrix(label_data, truth_data, normalize=normalize, save_file = path)
-        if (verbose):
-            print("Correlation Matrix saved at " + path, filename)
-
-
-
-
-
-
+            label_files.append(filename)
+        self.__param_handler.set_filelists(label_files = label_files)
+        self.__param_handler.save_filelists(self.project_path)
 
 
     #############           Steps of the pipeline         ######################
     ##########################################################################
 
 
-    #### training
     def create_training_filelist(self, verbose = True):
+
         satFile_pattern = fh.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
         labFile_pattern = fh.get_filename_pattern(self.label_file_structure, self.timestamp_length)
-        self.training_sets =  fh.generate_filelist_from_folder(self.data_source_folder, satFile_pattern, labFile_pattern)
+        self.training_sets = fh.generate_filelist_from_folder(self.data_source_folder, satFile_pattern, labFile_pattern)
         filepath = os.path.join(self.project_path, "filelists", "training_sets.json")
         self.save_parameters(filepath)
         if (verbose):
@@ -362,3 +255,110 @@ class cloud_classifier(cloud_trainer, data_handler):
         self.training_sets, self.evaluation_sets, self.timestamps = fh.split_sets(datasets, satFile_pattern, 24, timesensitive = True)
         self.input_files = [s[0] for s in self.evaluation_sets]
         self.save_project_data()
+
+
+
+
+
+
+
+######################    Evaluation  ######################################
+############################################################################
+
+
+    def create_evaluation_plots(self, correlation = False, probas = False, comparison = False,
+                                cmp_targets = None, plot_titles = None, show = True, verbose = True):
+
+        for i in range(len(self.label_files)):
+            label_file = self.label_files[i]
+            truth_file = self.evaluation_sets[i][1]
+            timestamp = self.eval_timestamps[i]
+            if(correlation):
+                self.save_coorMatrix(label_file = label_file, truth_file = truth_file,
+                                     timestamp = timestamp, verbose=verbose, show = show)
+            if (comparison):
+                self.save_comparePlot(label_file = label_file, truth_file = truth_file,
+                                      timestamp = timestamp, compare_projects =cmp_targets, plot_titles=plot_titles, verbose=verbose, show = show)
+            if(probas):
+                self.save_probasPlot(label_file = label_file, truth_file = truth_file, timestamp = timestamp,
+                    plot_titles=plot_titles, verbose=verbose, show = show)
+
+
+    def get_overallCoocurrence(self, show = False):
+        all_labels, all_truth = [], []
+        for i in range(len(self.label_files)):
+            label_file = self.label_files[i]
+            truth_file = self.evaluation_sets[i][1]
+            all_labels.append(self.get_plotable_data(data_file = label_file, get_coords = False))
+            all_truth.append(self.get_plotable_data(data_file = truth_file, get_coords = False))
+        all_labels, all_truth = fh.clean_eval_data(all_labels, all_truth)
+
+        self.save_coorMatrix( label_data = all_labels, truth_data = all_truth, filename = "Overall_CoocurrenceMatrix.png", show = show)
+
+
+
+
+
+    def save_comparePlot(self, label_file, truth_file, timestamp, compare_projects= None,
+            plot_titles = None, verbose = True, show = True):
+
+        all_files = [label_file]
+        filename = os.path.split(label_file)[1]
+        for proj_path in compare_projects:
+            path = os.path.join(proj_path, "labels", filename)
+            all_files.append(path)
+
+        filename = timestamp + "_ComparisonPlot.png"
+        path = os.path.join(self.project_path, "plots", "Comparisons", filename)
+        fh.create_subfolders(path, self.project_path)
+
+        hour = int(timestamp[-4:-2])
+        self.plot_multiple(all_files, truth_file, georef_file = self.georef_file, reduce_to_mask = True,
+            plot_titles = plot_titles, hour = hour, save_file = path, show = show)
+        if (verbose):
+            print("Comparison Plot saved at " + path)
+
+
+    def save_probasPlot(self, label_file, truth_file, timestamp,
+            plot_titles = None, verbose = True, show = True, filename = None):
+
+
+        if (filename is None):
+            filename = timestamp + "_ProbabilityPlot.png"
+        path = os.path.join(self.project_path, "plots", "Probabilities", filename)
+        fh.create_subfolders(path, self.project_path)
+
+        hour = int(timestamp[-4:-2])
+        self.plot_probas(label_file, truth_file, georef_file = self.georef_file, reduce_to_mask = True,
+            plot_titles = plot_titles, hour = hour, save_file = path, show = show)
+        if (verbose):
+            print("Probability Plot saved at " + path)
+
+
+    def save_coorMatrix(self, label_file = None, truth_file = None,
+            label_data = None, truth_data = None,
+            timestamp = None, filename = None,
+            normalize = True, verbose = True, show = True):
+
+        if (truth_file is None and truth_data is None):
+            raise ValueError("'truth_file' or 'truth_data' be specified!")
+        if (label_file is None and label_data is None):
+            raise ValueError("'label_file' or 'label_data' be specified!")
+        if (filename is None and timestamp is None):
+            raise ValueError("'filename' or 'timestamp' be specified!")
+
+        if (filename is None):
+            filename = timestamp + "_CoocurrenceMatrix.png"
+        if(label_data is None):
+            label_data = self.get_plotable_data(data_file = label_file, reduce_to_mask = True, get_coords = False)
+        if(truth_data is None):
+            truth_data = self.get_plotable_data(data_file = truth_file, reduce_to_mask = True, get_coords = False)
+
+        path = os.path.join(self.project_path, "plots", "Coocurrence", filename)
+        fh.create_subfolders(path)
+
+        conf.plot_coocurrence_matrix(label_data, truth_data, normalize=normalize, save_file = path)
+        if (verbose):
+            print("Correlation Matrix saved at " + path, filename)
+
+
