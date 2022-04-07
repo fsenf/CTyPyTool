@@ -154,18 +154,21 @@ class cloud_classifier():
 
     def create_training_filelist(self, verbose = True):
 
-        satFile_pattern = fh.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
-        labFile_pattern = fh.get_filename_pattern(self.label_file_structure, self.timestamp_length)
-        self.training_sets = fh.generate_filelist_from_folder(self.data_source_folder, satFile_pattern, labFile_pattern)
-        filepath = os.path.join(self.project_path, "filelists", "training_sets.json")
-        self.save_parameters(filepath)
+        satFile_pattern = fh.get_filename_pattern(self.params["sat_file_structure"],
+                                                  self.params["timestamp_length"])
+        labFile_pattern = fh.get_filename_pattern(self.params["label_file_structure"],
+                                                  self.params["timestamp_length"])
+        training_sets = fh.generate_filelist_from_folder(self.params["data_source_folder"],
+                                                         satFile_pattern, labFile_pattern)
+
+        self.__param_handler.set_filelists(training_sets = training_sets)
+        self.__param_handler.save_filelists(self.project_path)
         if (verbose):
             print("Filelist created!")
 
 
     def apply_mask(self, verbose = True):
         super().set_indices_from_mask(self.mask_file, self.mask_key)
-        #filename = os.path.join(self.project_path, "data", "masked_indices")
         if (verbose):
             print("Masked indices set!")
 
@@ -201,8 +204,10 @@ class cloud_classifier():
 
     ### predicting
     def extract_input_filelist(self, verbose = True):
-        satFile_pattern = fh.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
-        labFile_pattern = fh.get_filename_pattern(self.label_file_structure, self.timestamp_length)
+        satFile_pattern = fh.get_filename_pattern(self.params["sat_file_structure"],
+                                                  self.params["timestamp_length"])
+        labFile_pattern = fh.get_filename_pattern(self.params["label_file_structure"],
+                                                  self.params["timestamp_length"])
 
         self.input_files =  fh.generate_filelist_from_folder(folder = self.input_source_folder,
             satFile_pattern = satFile_pattern,
@@ -248,8 +253,10 @@ class cloud_classifier():
 
     ### evaluation
     def create_split_training_filelist(self):
-        satFile_pattern = fh.get_filename_pattern(self.sat_file_structure, self.timestamp_length)
-        labFile_pattern = fh.get_filename_pattern(self.label_file_structure, self.timestamp_length)
+        satFile_pattern = fh.get_filename_pattern(self.params["sat_file_structure"],
+                                                  self.params["timestamp_length"])
+        labFile_pattern = fh.get_filename_pattern(self.params["label_file_structure"],
+                                                  self.params["timestamp_length"])
         datasets =  fh.generate_filelist_from_folder(self.data_source_folder, satFile_pattern, labFile_pattern)
 
         self.training_sets, self.evaluation_sets, self.timestamps = fh.split_sets(datasets, satFile_pattern, 24, timesensitive = True)
