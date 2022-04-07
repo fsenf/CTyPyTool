@@ -6,3 +6,5 @@ env/
 notebooks/test*.ipynb
 *sublime-workspace
 *sublime-project
+dev_notebooks/
+TODOs
