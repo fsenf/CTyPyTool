@@ -172,4 +172,3 @@ def merge_labels(labels, merge_list):
         for merge_pair in merge_ints:
             labels[labels == merge_pair[0]] = merge_pair[1]
 
-

@@ -28,10 +28,10 @@ class cloud_classifier():
 
 
     def __init__(self):
-        self.__project_path = None
-        self.__param_handler = parameter_handler()
-        self.params = self.__param_handler.parameters
-        self.filelists = self.__param_handler.filelists
+        self.project_path = None
+        self.param_handler = parameter_handler()
+        self.params = self.param_handler.parameters
+        self.filelists = self.param_handler.filelists
 
         self.masked_indices = None
 
@@ -62,7 +62,7 @@ class cloud_classifier():
             print("Folder with given name already exits! Loading existing project!")
         else:
             try:
-                self.__param_handler.initalize_settings(folder)
+                self.param_handler.initalize_settings(folder)
                 print("Project folder created successfully!")
 
             except Exception:
@@ -88,21 +88,22 @@ class cloud_classifier():
     def load_project_data(self):
         if (self.project_path is None):
             raise ValueError("Project path not set")
-        self.__param_handler.load_parameters(self.project_path)
-        self.__param_handler.load_filelists(self.project_path)
+        self.param_handler.load_parameters(self.project_path)
+        self.param_handler.load_filelists(self.project_path)
 
 
     def save_project_data(self):
         if (self.project_path is None):
             raise ValueError("Project path not set")
-        self.__param_handler.save_parameters(self.project_path)
-        self.__param_handler.save_filelists(self.project_path)
+        self.param_handler.save_parameters(self.project_path)
+        self.param_handler.save_filelists(self.project_path)
 
 
     def set_project_parameters(self, **kwargs):
-        self.__param_handler.set_parameters(**kwargs)
-        if (self.project_path is not None):
-            self.__param_handler.save_parameters(self.project_path)
+        self.param_handler.set_parameters(**kwargs)
+        self.param_handler.set_filelists(**kwargs)
+        self.save_project_data()
+
 
 
 
@@ -118,7 +119,7 @@ class cloud_classifier():
                 self.create_split_training_filelist()
             else:
                 self.create_training_filelist(verbose = verbose)
-        wnc.create_reference_file(self.project_path, self.__param_handler)
+        wnc.create_reference_file(self.project_path, self.param_handler)
         self.apply_mask(verbose = verbose)
         if(create_training_data):
             vec, lab = self.create_training_set(verbose = verbose)
@@ -126,7 +127,7 @@ class cloud_classifier():
             vec, lab = self.load_training_set()
         self.train_classifier(vec, lab, verbose = verbose)
 
-        self.__param_handler.save_filelists(self.project_path)
+        self.param_handler.save_filelists(self.project_path)
 
 
     def run_prediction_pipeline(self, verbose = True, create_filelist = True, evaluation = False):
@@ -150,8 +151,8 @@ class cloud_classifier():
 
             filename = self.save_labels(labels, indices, file, probas, verbose = verbose)
             label_files.append(filename)
-        self.__param_handler.set_filelists(label_files = label_files)
-        self.__param_handler.save_filelists(self.project_path)
+        self.param_handler.set_filelists(label_files = label_files)
+        self.param_handler.save_filelists(self.project_path)
 
 
     #############           Steps of the pipeline         ######################
@@ -167,8 +168,8 @@ class cloud_classifier():
         training_sets = fh.generate_filelist_from_folder(self.params["data_source_folder"],
                                                          satFile_pattern, labFile_pattern)
 
-        self.__param_handler.set_filelists(training_sets = training_sets)
-        self.__param_handler.save_filelists(self.project_path)
+        self.param_handler.set_filelists(training_sets = training_sets)
+        self.param_handler.save_filelists(self.project_path)
         if (verbose):
             print("Filelist created!")
 
