@@ -1,25 +1,27 @@
-from cloud_trainer import cloud_trainer
-from data_handler import data_handler
-
 from parameter_handler import parameter_handler
 
 import os
 import numpy as np
 import shutil
-import pathlib
 
-import cloud_trainer as ct
-import data_handler as dh
-
+import tools.cloud_training as ct
+import tools.data_handling as dh
 import tools.file_handling as fh
 import tools.confusion as conf
 import tools.write_netcdf as wnc
 
 
 import importlib
+import parameter_handler
 importlib.reload(ct)
+importlib.reload(parameter_handler)
 importlib.reload(dh)
 importlib.reload(fh)
+importlib.reload(wnc)
+importlib.reload(conf)
+
+from parameter_handler import parameter_handler
+
 
 
 class cloud_classifier():
@@ -28,7 +30,10 @@ class cloud_classifier():
     def __init__(self):
         self.__project_path = None
         self.__param_handler = parameter_handler()
-        self.params = self.param_handler.parameters
+        self.params = self.__param_handler.parameters
+        self.filelists = self.__param_handler.filelists
+
+        self.masked_indices = None
 
     # ############ CREATING, LOADING AND SAVING PROJECTS ######################
     # ########################################################################
@@ -51,12 +56,13 @@ class cloud_classifier():
 
         if (path is None):
             path = os.getcwd()
+
         folder = os.path.join(path, name)
         if (os.path.isdir(folder)):
             print("Folder with given name already exits! Loading existing project!")
         else:
             try:
-                shutil.copytree(self.default_path, folder)
+                self.__param_handler.initalize_settings(folder)
                 print("Project folder created successfully!")
 
             except Exception:
@@ -168,18 +174,19 @@ class cloud_classifier():
 
 
     def apply_mask(self, verbose = True):
-        super().set_indices_from_mask(self.mask_file, self.mask_key)
+        self.masked_indices = dh.set_indices_from_mask(self.params)
         if (verbose):
             print("Masked indices set!")
 
 
     def create_training_set(self, verbose = True):
-        v,l = super().create_training_set()
+        vec, lab = dh.create_training_vectors(self.params, self, self.masked_indices)
+
         filename = os.path.join(self.project_path, "data", "training_data")
         self.save_training_set(v,l, filename)
         if (verbose):
             print("Training data created!")
-        return v,l
+        return vec, lab
 
     def load_training_set(self, verbose = True):
         filename = os.path.join(self.project_path, "data", "training_data")

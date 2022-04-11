@@ -1,3 +1,4 @@
+import shutil
 import json
 import os
 
@@ -86,7 +87,8 @@ class parameter_handler:
 
         if (path is None):
             path = self.__default_path
-        self.read_settings(path=path)
+        self.load_parameters(path=path)
+        self.load_filelists(path=path)
 
 
     def set_parameters(self, **kwargs):
@@ -141,3 +143,6 @@ class parameter_handler:
         # write json
         with open(filepath, 'w') as outfile:
             outfile.write(json_obj)
+
+    def initalize_settings(self, path):
+        shutil.copytree(self.__default_path, path + "/")
