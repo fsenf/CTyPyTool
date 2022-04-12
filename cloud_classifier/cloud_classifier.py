@@ -121,14 +121,12 @@ class cloud_classifier():
                 self.create_split_training_filelist()
             else:
                 self.create_training_filelist(verbose = verbose)
-        try:
-            reference = self.filelists["training_sets"][0][1]
-        except Exception:
-            raise RuntimeError("Can not create reference file. No training data added")
-        ncdf.create_reference_file(self.project_path, reference, self.params["cloudtype_channel"])
+
+        ncdf.create_reference_file(self.project_path, self.filelists["training_sets"],
+                                   self.params["cloudtype_channel"])
 
         self.apply_mask(verbose = verbose)
-        
+
         if(create_training_data):
             vectors, labels = self.create_training_data(verbose = verbose)
         else:
@@ -143,21 +141,27 @@ class cloud_classifier():
         if (create_filelist and not evaluation):
             self.extract_input_filelist(verbose = verbose)
 
-        self.load_classifier(verbose = verbose)
+        self.trainer.load_classifier(self.project_path, verbose = verbose)
         self.apply_mask(verbose = verbose)
-        self.set_reference_file(verbose = verbose)
+
+        ncdf.create_reference_file(self.project_path, self.filelists["training_sets"],
+                                   self.params["cloudtype_channel"])
+
         label_files = []
-        for file in self.params["input_files"]:
-            vectors, indices = self.create_input_vectors(file, verbose = verbose)
+        for file in self.filelists["input_files"]:
+            vectors, indices = dh.create_input_vectors(filename = file, params = self.params,
+                                                       indices = self.masked_indices, verbose = verbose)
             probas = None
+            # when classifier is Forest, get vote share for each type
             if(self.params["classifier_type"] == "Forest"):
                 li = self.classifier.classes_
-                probas = self.get_forest_proabilties(vectors)
+                probas = self.trainer.get_forest_proabilties(vectors, self.params)
                 labels = [li[i] for i in np.argmax(probas, axis = 1)]
+            # else get only labels
             else:
-                labels = self.predict_labels(vectors, verbose = verbose)
+                labels = self.trainer.predict_labels(vectors, self.params)
 
-            filename = self.save_labels(labels, indices, file, probas, verbose = verbose)
+            filename = self.write_labels(labels, indices, file, probas, verbose = verbose)
             label_files.append(filename)
         self.param_handler.set_filelists(label_files = label_files)
         self.param_handler.save_filelists(self.project_path)
@@ -213,47 +217,51 @@ class cloud_classifier():
 
 
 
-
-    ### predicting
     def extract_input_filelist(self, verbose = True):
         satFile_pattern = fh.get_filename_pattern(self.params["sat_file_structure"],
                                                   self.params["timestamp_length"])
         labFile_pattern = fh.get_filename_pattern(self.params["label_file_structure"],
                                                   self.params["timestamp_length"])
 
-        self.input_files =  fh.generate_filelist_from_folder(folder = self.input_source_folder,
-            satFile_pattern = satFile_pattern,
-            labFile_pattern = labFile_pattern,
-            only_sataData = True)
-        filepath = os.path.join(self.project_path, "filelists", "input_files.json")
-        self.save_parameters(filepath)
+        input_files = fh.generate_filelist_from_folder(folder = self.params["input_source_folder"],
+                                                    satFile_pattern = satFile_pattern,
+                                                    labFile_pattern = labFile_pattern,
+                                                    only_sataData = True)
+
+        self.param_handler.set_filelists(input_files = input_files)
+        self.param_handler.save_filelists(self.project_path)
+
         if (verbose):
             print("Input filelist created!")
 
 
 
+    def write_labels(self, labels, indices, sat_file, probas = None, verbose = True):
+        name = fh.get_label_name(sat_file = sat_file,
+                                 sat_file_structure = self.params["sat_file_structure"],
+                                 lab_file_structure = self.params["label_file_structure"],
+                                 timestamp_length = self.params["timestamp_length"])
 
-    def create_input_vectors(self, file, verbose = True):
-        vectors, indices = super().create_input_vectors(file)
-        if(verbose):
-                print("Input vectors created!")
-        return vectors, indices
-
-
-    def predict_labels(self, input_vectors, verbose = True):
-        labels = super().predict_labels(input_vectors)
-        if(verbose):
-            print("Predicted Labels!")
-        return labels
-
-    def save_labels(self, labels, indices, sat_file, probas = None, verbose = True):
-        name = fh.get_label_name(sat_file, self.sat_file_structure, self.label_file_structure, self.timestamp_length)
         filepath = os.path.join(self.project_path, "labels", name)
         fh.create_subfolders(filepath)
-        self.make_xrData(labels, indices, NETCDF_out = filepath, prob_data = probas)
+        ncdf.make_xrData(labels = labels, indices = indices,
+                         project_path = self.project_path,
+                         ct_channel = self.params["cloudtype_channel"],
+                         NETCDF_out = filepath, prob_data = probas)
         if(verbose):
-            print("Labels saved as " + name )
+            print("Labels saved as " + name)
         return filepath
+
+
+
+
+
+
+
+
+
+
+
 
 
     ### evaluation

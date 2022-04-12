@@ -52,8 +52,7 @@ class cloud_trainer:
         Predicts the labels if a corresponding set of input vectors has been created.
         """
         if(self.classifier is None):
-            print("No classifer trained or loaded")
-            return
+            raise Exception("No classifer trained or loaded")
 
         if(params["feature_preselection"] and not (self.feat_select is None)):
             vectors = self.apply_feature_selection(vectors)

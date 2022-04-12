@@ -132,14 +132,6 @@ def get_label_name(sat_file, sat_file_structure, lab_file_structure, timestamp_l
 
 
 
-def write_NETCDF(data, filename):
-    """
-    writes xarray dataset to NETCDF file
-    """
-    data.to_netcdf(path=filename, mode='w')
-
-
-
 def clean_eval_data(data_1, data_2):
     """
     returns one dimensional arrays without nan values

@@ -95,6 +95,44 @@ def create_training_vectors(params, training_sets, masked_indices, verbose):
 
 
 
+
+
+def create_input_vectors(filename, params, indices, hour=0, verbose = True):
+    """
+    Extracts feature vectors from given NETCDF file at a certain hour.
+
+
+    Parameters
+    ----------
+    filename : string
+        Filename of the sattelite data
+
+    hour : int
+        0-23, hour of the day at which the data set is read
+
+    Returns
+    -------
+    tuple of numpy arrays
+        Array containig the test vectors and another array containing the indices those vectors belong to
+
+    """
+    sat_data = xr.open_dataset(filename)
+    if (indices is None):
+        # get all non-nan indices from the first layer specified in input channels
+        indices = np.where(~np.isnan(sat_data[params["input_channels"][0]][0]))
+        print("No mask indices given, using complete data set")
+
+    vectors = td.extract_feature_vectors(sat_data, indices, hour, params["input_channels"])
+    vectors, indices = td.clean_test_vectors(vectors, indices)
+    if (params["difference_vectors"]):
+        vectors = td.create_difference_vectors(vectors, params["original_values"])
+    if(verbose):
+        print("Input vectors created!")
+    return vectors, indices
+
+
+
+
 def save_training_data(vectors, labels, project_path):
     """
     Saves a set of training vectors and labels
@@ -118,7 +156,7 @@ def save_training_data(vectors, labels, project_path):
 def load_training_data(project_path):
     """
     Loads a set of training vectors and labels
-    
+
     Parameters
     ----------
     project_path : string
@@ -131,5 +169,3 @@ def load_training_data(project_path):
     filename = os.path.join(project_path, "data", "training_data")
     vectors, labels = load(filename)
     return vectors, labels
-
-
