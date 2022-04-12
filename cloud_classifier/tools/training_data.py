@@ -10,14 +10,15 @@ Adds helper-methods for extracting machine learining data from NETCDF datasets
 """
 
 
-def sample_training_sets(training_sets, n, hours, indices, input_channels,  ct_channel = "CT", verbose = False):
+def sample_training_sets(training_sets, n_samples, hours, indices, input_channels,
+     ct_channel = "CT", verbose = False):
     start = time.time()
     """
     Creates a sample of training vectors from NETCDF datasets
 
 
-    Samples a set of satellite data and corresponding labels at n random positions 
-    for each hour specified. 
+    Samples a set of satellite data and corresponding labels at n_samples random positions
+    for each hour specified.
     """
 
     training_vectors = None
@@ -27,9 +28,9 @@ def sample_training_sets(training_sets, n, hours, indices, input_channels,  ct_c
     i = 0
     for t_set in training_sets:
         if(verbose):
-            i+=1
-            print("Sampling dataset " + str(i) + "/" + str(len(training_sets)) )
-        #read data
+            i += 1
+            print("Sampling dataset " + str(i) + "/" + str(len(training_sets)))
+        # read data
         sat_data = xr.open_dataset(t_set[0])
         # check if indices have benn selected
         if (indices is None):
@@ -42,8 +43,8 @@ def sample_training_sets(training_sets, n, hours, indices, input_channels,  ct_c
         labels = np.array([])
         # sample all hours
         for h in hours:
-            # get n random positions
-            selection = get_samples(indices, n)
+            # get n_samples random positions
+            selection = get_samples(indices, n_samples)
             # get feature vectors for selection
             v = extract_feature_vectors(sat_data, selection, h, input_channels)
             if(vectors is None):
@@ -51,9 +52,9 @@ def sample_training_sets(training_sets, n, hours, indices, input_channels,  ct_c
                 vectors = v
             else:
                 vectors = np.append(vectors, v, axis = 0)
-            labels = np.append(labels, 
-                extract_labels(t_set[1], selection, h, ct_channel = ct_channel), 
-                axis = 0)
+            labels = np.append(labels,
+                               extract_labels(t_set[1], selection, h, ct_channel = ct_channel),
+                               axis = 0)
 
 
         if (training_vectors is None):
@@ -70,12 +71,12 @@ def sample_training_sets(training_sets, n, hours, indices, input_channels,  ct_c
 
 
 
-def get_samples(indices, n):
+def get_samples(indices, n_samples):
     """
-    Get n random samples from a set of indices    
+    Get n_samples random samples from a set of indices    
     """
-    selection = np.array(random.sample(list(zip(indices[0],indices[1])),n))
-    # adjust selection shape (n,2) --> (2,n)
+    selection = np.array(random.sample(list(zip(indices[0],indices[1])),n_samples))
+    # adjust selection shape (n_samples,2) --> (2,n_samples)
     s = selection.shape
     selection = selection.flatten().reshape(s[1],s[0],order = 'F')
     return selection
@@ -92,7 +93,7 @@ def extract_feature_vectors(data, indices, hour, input_channels):
         values = np.array(data[channel])[hour,indices[0],indices[1]].flatten() 
         vectors.append(values)
 
-    # reshape from "channels X n" to "n X channels"
+    # reshape from "channels X n_samples" to "n_samples X channels"
     vectors = np.array(vectors)
     sp = vectors.shape
     vectors = vectors.flatten().reshape(sp[1],sp[0], order='F')

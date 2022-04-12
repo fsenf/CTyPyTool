@@ -41,7 +41,7 @@ def set_indices_from_mask(params):
     return masked_indices
 
 
-def create_training_vectors(params, training_sets, masked_indices):
+def create_training_vectors(params, training_sets, masked_indices, verbose):
     """
     Creates a set of training vectors from NETCDF datasets.
 
@@ -69,9 +69,13 @@ def create_training_vectors(params, training_sets, masked_indices):
         return
 
     # Get vectors from all added training sets
-    vectors, labels = td.sample_training_sets(training_sets, masked_indices, params["samples"],
-                                              params["hours"], params["input_channels"],
-                                              params["cloudtype_channel"], verbose = False)
+    vectors, labels = td.sample_training_sets(training_sets = training_sets,
+                                              n_samples = params["samples"],
+                                              hours = params["hours"],
+                                              indices = masked_indices,
+                                              input_channels = params["input_channels"],
+                                              ct_channel = params["cloudtype_channel"],
+                                              verbose = verbose)
 
     # Remove nan values
     vectors, labels = td.clean_training_set(vectors, labels)
@@ -81,9 +85,51 @@ def create_training_vectors(params, training_sets, masked_indices):
         vectors = td.create_difference_vectors(vectors, params["original_values"])
 
     if (params["nwcsaf_in_version"] == 'auto'):
-        params["nwcsaf_in_version"] = nwc.check_nwcsaf_version(labels, verbose = False)
+        params["nwcsaf_in_version"] = nwc.check_nwcsaf_version(labels, verbose = verbose)
 
     # Check if
     labels = nwc.switch_nwcsaf_version(labels, params["nwcsaf_out_version"], params["nwcsaf_in_version"])
     td.merge_labels(labels, params["merge_list"])
     return vectors, labels
+
+
+
+
+def save_training_data(vectors, labels, project_path):
+    """
+    Saves a set of training vectors and labels
+
+    Parameters
+    ----------
+    project_path : string
+        Path of the project folder.
+
+    vectors : array like
+        The feature vectors of the training set.
+
+    labels : array like
+        The labels of the training set
+    """
+    filename = os.path.join(project_path, "data", "training_data")
+
+    dump([vectors, labels], filename)
+
+
+def load_training_data(project_path):
+    """
+    Loads a set of training vectors and labels
+    
+    Parameters
+    ----------
+    project_path : string
+        Path of the project folder.
+
+    Returns
+    -------
+    Tuple containing a set of training vectors and corresponing labels
+    """
+    filename = os.path.join(project_path, "data", "training_data")
+    vectors, labels = load(filename)
+    return vectors, labels
+
+

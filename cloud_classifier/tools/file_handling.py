@@ -157,9 +157,9 @@ def clean_eval_data(data_1, data_2):
 
 
 def get_match_string(labels, truth):
-    
+
     correct = np.sum(labels == truth)
     not_nan = np.where(~np.isnan(labels))
     total = len(not_nan[0].flatten())
-    
+
     return "Correctly identified {:.2f} %".format(100*correct/total)

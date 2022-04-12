@@ -1,26 +1,25 @@
-from parameter_handler import parameter_handler
 
 import os
 import numpy as np
-import shutil
 
-import tools.cloud_training as ct
+import parameter_handler
+import cloud_trainer
+
 import tools.data_handling as dh
 import tools.file_handling as fh
 import tools.confusion as conf
-import tools.write_netcdf as wnc
+import tools.write_netcdf as ncdf
 
 
 import importlib
-import parameter_handler
-importlib.reload(ct)
+importlib.reload(cloud_trainer)
 importlib.reload(parameter_handler)
+
 importlib.reload(dh)
 importlib.reload(fh)
-importlib.reload(wnc)
+importlib.reload(ncdf)
 importlib.reload(conf)
 
-from parameter_handler import parameter_handler
 
 
 
@@ -29,11 +28,14 @@ class cloud_classifier():
 
     def __init__(self):
         self.project_path = None
-        self.param_handler = parameter_handler()
+        self.param_handler = parameter_handler.parameter_handler()
+
         self.params = self.param_handler.parameters
         self.filelists = self.param_handler.filelists
 
+        self.trainer = cloud_trainer.cloud_trainer()
         self.masked_indices = None
+
 
     # ############ CREATING, LOADING AND SAVING PROJECTS ######################
     # ########################################################################
@@ -119,15 +121,21 @@ class cloud_classifier():
                 self.create_split_training_filelist()
             else:
                 self.create_training_filelist(verbose = verbose)
-        wnc.create_reference_file(self.project_path, self.param_handler)
-        self.apply_mask(verbose = verbose)
-        if(create_training_data):
-            vec, lab = self.create_training_set(verbose = verbose)
-        else:
-            vec, lab = self.load_training_set()
-        self.train_classifier(vec, lab, verbose = verbose)
+        try:
+            reference = self.filelists["training_sets"][0][1]
+        except Exception:
+            raise RuntimeError("Can not create reference file. No training data added")
+        ncdf.create_reference_file(self.project_path, reference, self.params["cloudtype_channel"])
 
-        self.param_handler.save_filelists(self.project_path)
+        self.apply_mask(verbose = verbose)
+        
+        if(create_training_data):
+            vectors, labels = self.create_training_data(verbose = verbose)
+        else:
+            vectors, labels = self.load_training_set()
+
+        self.trainer.train_classifier(vectors, labels, self.params, verbose)
+        self.trainer.save_classifier(self.project_path, verbose)
 
 
     def run_prediction_pipeline(self, verbose = True, create_filelist = True, evaluation = False):
@@ -135,7 +143,7 @@ class cloud_classifier():
         if (create_filelist and not evaluation):
             self.extract_input_filelist(verbose = verbose)
 
-        self.load_classifier(reload = True, verbose = verbose)
+        self.load_classifier(verbose = verbose)
         self.apply_mask(verbose = verbose)
         self.set_reference_file(verbose = verbose)
         label_files = []
@@ -180,31 +188,27 @@ class cloud_classifier():
             print("Masked indices set!")
 
 
-    def create_training_set(self, verbose = True):
-        vec, lab = dh.create_training_vectors(self.params, self, self.masked_indices)
-
-        filename = os.path.join(self.project_path, "data", "training_data")
-        self.save_training_set(v,l, filename)
+    def create_training_data(self, verbose = True):
+        vectors, labels = dh.create_training_vectors(self.params, self.filelists["training_sets"],
+                                                     self.masked_indices, verbose = verbose)
+        dh.save_training_data(vectors, labels, self.project_path)
         if (verbose):
             print("Training data created!")
-        return vec, lab
+        return vectors, labels
+
 
     def load_training_set(self, verbose = True):
-        filename = os.path.join(self.project_path, "data", "training_data")
-        v,l = super().load_training_set(filename)
+        vectors, labels = dh.load_training_data(self.project_path)
         if (verbose):
             print("Training data loaded!")
-        return v,l
+        return vectors, labels
+
 
     def train_classifier(self, vectors, labels, verbose = True):
-        super().train_classifier(vectors, labels)
-        filename = os.path.join(self.project_path, "data", "classifier")
-        self.save_classifier(filename)
+        self.trainer.train_classifier(vectors, labels, self.params)
+        self.trainer.save_classifier(self.project_path)
         if (verbose):
             print("Classifier created!")
-
-
-
 
 
 
@@ -227,13 +231,6 @@ class cloud_classifier():
             print("Input filelist created!")
 
 
-    def load_classifier(self, reload = False, verbose = True):
-        if(self.classifier is None or reload):
-            filename = os.path.join(self.project_path, "data", "classifier")
-            super().load_classifier(filename)
-            filename = os.path.join(self.project_path, "data", "masked_indices")
-            if(verbose):
-                print("Classifier loaded!")
 
 
     def create_input_vectors(self, file, verbose = True):

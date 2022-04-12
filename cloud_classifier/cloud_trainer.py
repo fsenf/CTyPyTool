@@ -18,7 +18,7 @@ class cloud_trainer:
         """
 
 
-        classifier_type = self.classifier_type
+        classifier_type = params["classifier_type"]
 
         if(classifier_type == "Tree"):
             print("Training Tree Classifier")
