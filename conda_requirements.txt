@@ -1,0 +1,9 @@
+jupyter
+h5py
+xarray
+numpy
+joblib
+scikit-learn 
+matplotlib
+cartopy
+netcdf4
