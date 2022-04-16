@@ -18,6 +18,7 @@ import tools.confusion as conf
 
 #
 import importlib
+
 importlib.reload(td)
 importlib.reload(fh)
 importlib.reload(nwc)
@@ -34,9 +35,10 @@ def set_indices_from_mask(params):
         Dictionary of project parameters
 
     """
-    mask_data = h5py.File(params["mask_file"], 'r')
-    m = xr.DataArray([row for row in mask_data[params["mask_key"]]],
-                     name = params["mask_key"])
+    mask_data = h5py.File(params["mask_file"], "r")
+    m = xr.DataArray(
+        [row for row in mask_data[params["mask_key"]]], name=params["mask_key"]
+    )
     masked_indices = np.where(m == params["mask_sea_coding"])
     return masked_indices
 
@@ -64,40 +66,40 @@ def create_training_vectors(params, training_sets, masked_indices, verbose):
 
     """
 
-    if (not training_sets):
+    if not training_sets:
         print("No training data added.")
         return
 
     # Get vectors from all added training sets
-    vectors, labels = td.sample_training_sets(training_sets = training_sets,
-                                              n_samples = params["samples"],
-                                              hours = params["hours"],
-                                              indices = masked_indices,
-                                              input_channels = params["input_channels"],
-                                              ct_channel = params["cloudtype_channel"],
-                                              verbose = verbose)
+    vectors, labels = td.sample_training_sets(
+        training_sets=training_sets,
+        n_samples=params["samples"],
+        hours=params["hours"],
+        indices=masked_indices,
+        input_channels=params["input_channels"],
+        ct_channel=params["cloudtype_channel"],
+        verbose=verbose,
+    )
 
     # Remove nan values
     vectors, labels = td.clean_training_set(vectors, labels)
 
-    if (params["difference_vectors"]):
+    if params["difference_vectors"]:
         # create difference vectors
         vectors = td.create_difference_vectors(vectors, params["original_values"])
 
-    if (params["nwcsaf_in_version"] == 'auto'):
-        params["nwcsaf_in_version"] = nwc.check_nwcsaf_version(labels, verbose = verbose)
+    if params["nwcsaf_in_version"] == "auto":
+        params["nwcsaf_in_version"] = nwc.check_nwcsaf_version(labels, verbose=verbose)
 
     # Check if
-    labels = nwc.switch_nwcsaf_version(labels, params["nwcsaf_out_version"], params["nwcsaf_in_version"])
+    labels = nwc.switch_nwcsaf_version(
+        labels, params["nwcsaf_out_version"], params["nwcsaf_in_version"]
+    )
     td.merge_labels(labels, params["merge_list"])
     return vectors, labels
 
 
-
-
-
-
-def create_input_vectors(filename, params, indices, hour=0, verbose = True):
+def create_input_vectors(filename, params, indices, hour=0, verbose=True):
     """
     Extracts feature vectors from given NETCDF file at a certain hour.
 
@@ -117,20 +119,20 @@ def create_input_vectors(filename, params, indices, hour=0, verbose = True):
 
     """
     sat_data = xr.open_dataset(filename)
-    if (indices is None):
+    if indices is None:
         # get all non-nan indices from the first layer specified in input channels
         indices = np.where(~np.isnan(sat_data[params["input_channels"][0]][0]))
         print("No mask indices given, using complete data set")
 
-    vectors = td.extract_feature_vectors(sat_data, indices, hour, params["input_channels"])
+    vectors = td.extract_feature_vectors(
+        sat_data, indices, hour, params["input_channels"]
+    )
     vectors, indices = td.clean_test_vectors(vectors, indices)
-    if (params["difference_vectors"]):
+    if params["difference_vectors"]:
         vectors = td.create_difference_vectors(vectors, params["original_values"])
-    if(verbose):
+    if verbose:
         print("Input vectors created!")
     return vectors, indices
-
-
 
 
 def save_training_data(vectors, labels, project_path):

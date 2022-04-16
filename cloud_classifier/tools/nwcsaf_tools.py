@@ -1,21 +1,58 @@
+def definde_NWCSAF_variables(missing_labels=None):
+    ct_colors = [
+        "#007800",
+        "#000000",
+        "#fabefa",
+        "#dca0dc",
+        "#ff6400",
+        "#ffb400",
+        "#f0f000",
+        "#d7d796",
+        "#e6e6e6",
+        "#c800c8",
+        "#0050d7",
+        "#00b4e6",
+        "#00f0f0",
+        "#5ac8a0",
+    ]
 
-def definde_NWCSAF_variables(missing_labels = None):
-    ct_colors = ['#007800', '#000000', '#fabefa', '#dca0dc',
-            '#ff6400', '#ffb400', '#f0f000', '#d7d796',
-            '#e6e6e6', '#c800c8', '#0050d7', '#00b4e6',
-            '#00f0f0', '#5ac8a0', ]
+    ct_indices = [
+        1.5,
+        2.5,
+        3.5,
+        4.5,
+        5.5,
+        6.5,
+        7.5,
+        8.5,
+        9.5,
+        10.5,
+        11.5,
+        12.5,
+        13.5,
+        14.5,
+        15.5,
+    ]
 
-    ct_indices = [1.5, 2.5, 3.5, 4.5,
-               5.5, 6.5, 7.5, 8.5,
-               9.5, 10.5, 11.5, 12.5,
-               13.5, 14.5, 15.5]
+    ct_labels = [
+        "land",
+        "sea",
+        "snow",
+        "sea ice",
+        "very low",
+        "low",
+        "middle",
+        "high opaque",
+        "very high opaque",
+        "fractional",
+        "semi. thin",
+        "semi. mod. thick",
+        "semi. thick",
+        "semi. above low",
+        "semi. above snow",
+    ]
 
-    ct_labels = ["land", "sea", "snow", "sea ice",
-                 "very low", "low", "middle", "high opaque",
-                 "very high opaque", "fractional", "semi. thin", "semi. mod. thick",
-                 "semi. thick", "semi. above low", "semi. above snow"]
-
-    if(missing_labels is not None):
+    if missing_labels is not None:
         mis_ind = [ct_labels.index(ml) for ml in missing_labels]
         for ind in sorted(mis_ind, reverse=True):
             for ct_list in [ct_colors, ct_labels, ct_indices]:
@@ -47,30 +84,25 @@ def check_nwcsaf_version(labels, verbose):
     for i in range(7, 14, 2):
         odd_sum = (labels == i).sum()
 
-    if (high_sum > 0 and odd_sum == 0):
-        return 'v2013'
-    if (high_sum == 0 and odd_sum > 0):
-        return 'v2018'
+    if high_sum > 0 and odd_sum == 0:
+        return "v2013"
+    if high_sum == 0 and odd_sum > 0:
+        return "v2018"
     return None
 
 
-
-def switch_nwcsaf_version(labels, target_version, input_version = None):
+def switch_nwcsaf_version(labels, target_version, input_version=None):
     """
     maps netcdf cloud types from the 2013 standard to the 2018 standard
     """
-    if (input_version is None):
+    if input_version is None:
         input_version = check_nwcsaf_version(labels)
-    if (target_version == input_version):
+    if target_version == input_version:
         return labels
-    if (target_version == 'v2018'):
+    if target_version == "v2018":
         return switch_2018(labels)
-    if (target_version == 'v2013'):
+    if target_version == "v2013":
         return switch_2013(labels)
-
-
-
-
 
 
 def switch_2018(labels):

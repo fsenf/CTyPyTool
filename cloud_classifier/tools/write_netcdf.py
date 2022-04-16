@@ -4,11 +4,8 @@ import pathlib
 import os
 
 
-
 def get_reference_filepath(project_path):
     return os.path.join(project_path, "data", "label_reference.nc")
-
-
 
 
 def create_reference_file(project_path, training_sets, cloudtype_channel):
@@ -23,15 +20,14 @@ def create_reference_file(project_path, training_sets, cloudtype_channel):
 
     data = xr.open_dataset(reference)
     for key in data.keys():
-        if(not key == cloudtype_channel):
+        if not key == cloudtype_channel:
             data = data.drop(key)
-    data.to_netcdf(path=ref_path, mode ='w')
+    data.to_netcdf(path=ref_path, mode="w")
 
 
-
-
-def make_xrData(labels, indices, project_path,
-                ct_channel, NETCDF_out = None, prob_data = None):
+def make_xrData(
+    labels, indices, project_path, ct_channel, NETCDF_out=None, prob_data=None
+):
     """
     Transforms a set of predicted labels into xarray-dataset
 
@@ -66,9 +62,8 @@ def make_xrData(labels, indices, project_path,
     new_data[indices[0], indices[1]] = labels
     out[ct_channel][0] = new_data
 
-
-    if(prob_data is not None):
-        shape += (len(prob_data[0]), )
+    if prob_data is not None:
+        shape += (len(prob_data[0]),)
         new_data = np.empty(shape)
         new_data[:] = np.nan
         new_data[indices[0], indices[1]] = prob_data
@@ -77,7 +72,7 @@ def make_xrData(labels, indices, project_path,
         new_dims += ("labels",)
         out["label_probability"] = (new_dims, new_data)
 
-    if (NETCDF_out is not None):
-        out.to_netcdf(path=NETCDF_out, mode='w')
+    if NETCDF_out is not None:
+        out.to_netcdf(path=NETCDF_out, mode="w")
 
     return out

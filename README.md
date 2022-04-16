@@ -1,6 +1,6 @@
 # CTyPyTool: Cloud Typing Python Tool
 
-This tools is intended to help weather forecasters in assessing the quality of their cloud forecasts. 
+This tools is intended to help weather forecasters in assessing the quality of their cloud forecasts.
 
 **A few facts:**
 * It emulates a cloud typing methodology (see https://www.nwcsaf.org/ct2) applied to Meteosat data (see https://www.eumetsat.int/meteosat-second-generation).
@@ -13,7 +13,7 @@ This tools is intended to help weather forecasters in assessing the quality of t
 
 
 
-## Installation 
+## Installation
 
 ### On your Local Computer
 

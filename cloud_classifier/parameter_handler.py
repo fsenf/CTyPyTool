@@ -12,7 +12,6 @@ class parameter_handler:
     a cloud classifier project
     """
 
-
     def __init__(self, path=None):
         """
         Declares position of parameter files and initalizes dictionaries.
@@ -34,7 +33,6 @@ class parameter_handler:
             "training_sets.json",
             "label_files.json",
         ]
-
 
         self.parameters = {
             "classifier_type": "Forest",
@@ -64,14 +62,12 @@ class parameter_handler:
                 "bt097",
                 "bt108",
                 "bt120",
-                "bt134"
+                "bt134",
             ],
             "cloudtype_channel": "ct",
             "nwcsaf_in_version": "auto",
             "nwcsaf_out_version": "v2018",
-            "hours": [
-                0
-            ]
+            "hours": [0],
         }
 
         self.filelists = {
@@ -79,29 +75,28 @@ class parameter_handler:
             "label_files": [],
             "input_files": [],
             "evaluation_sets": [],
-            "eval_timestamps": []
+            "eval_timestamps": [],
         }
 
         dirname = os.path.dirname(__file__)
         self.__default_path = os.path.join(dirname, "defaults")
 
-        if (path is None):
+        if path is None:
             path = self.__default_path
         self.load_parameters(path=path)
         self.load_filelists(path=path)
 
-
     def set_parameters(self, **kwargs):
-        self.parameters.update((k, v) for k, v in kwargs.items()
-                               if k in self.parameters)
+        self.parameters.update(
+            (k, v) for k, v in kwargs.items() if k in self.parameters
+        )
 
     def set_filelists(self, **kwargs):
-        self.filelists.update((k, v) for k, v in kwargs.items()
-                              if k in self.filelists)
+        self.filelists.update((k, v) for k, v in kwargs.items() if k in self.filelists)
 
     def extend_filelists(self, **kwargs):
         for k in self.filelists:
-            if (k in kwargs):
+            if k in kwargs:
                 self.filelists[k].extend(kwargs[k])
 
     def load_parameters(self, path):
@@ -124,24 +119,24 @@ class parameter_handler:
             filepath = os.path.join(path, "filelists", file)
             self.__save_data(dictionary=self.filelists, filepath=filepath)
 
-
-
     def __load_data(self, filepath, dictionary):
-        with open(filepath, 'r') as parameters:
+        with open(filepath, "r") as parameters:
             kwargs = json.load(parameters)
-            dictionary.update((k, v) for k, v in kwargs.items()
-                              if k in dictionary.keys())
+            dictionary.update(
+                (k, v) for k, v in kwargs.items() if k in dictionary.keys()
+            )
 
     def __save_data(self, dictionary, filepath):
         # read saved data
-        with open(filepath, 'r') as outfile:
+        with open(filepath, "r") as outfile:
             saved_data = json.load(outfile)
             # update saved data
-            saved_data.update({k: dictionary[k] for k in saved_data.keys()
-                               if k in dictionary})
+            saved_data.update(
+                {k: dictionary[k] for k in saved_data.keys() if k in dictionary}
+            )
             json_obj = json.dumps(saved_data, indent=4)
         # write json
-        with open(filepath, 'w') as outfile:
+        with open(filepath, "w") as outfile:
             outfile.write(json_obj)
 
     def initalize_settings(self, path):
