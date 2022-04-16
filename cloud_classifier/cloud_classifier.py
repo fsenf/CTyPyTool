@@ -78,8 +78,7 @@ class cloud_classifier(cloud_trainer, data_handler):
                 print("Project folder created successfully!")
 
             except Exception:
-                print("Could not initalize project settings at given location!")
-                return 0
+                raise RuntimeError("Could not initalize project settings at given location!")
         self.load_project(folder)
 
 
