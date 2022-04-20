@@ -155,7 +155,7 @@ class cloud_classifier:
             probas = None
             # when classifier is Forest, get vote share for each type
             if self.params["classifier_type"] == "Forest":
-                li = self.classifier.classes_
+                li = self.trainer.classifier.classes_
                 probas = self.trainer.get_forest_proabilties(vectors, self.params)
                 labels = [li[i] for i in np.argmax(probas, axis=1)]
             # else get only labels
