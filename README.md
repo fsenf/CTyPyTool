@@ -20,7 +20,7 @@ This tools is intended to help weather forecasters in assessing the quality of t
 #### Cloning repository
 Use the following command to clone the project to your local machine.
 ```
-$ git clone https://github.com/rudegrass/cloud_classification.git
+$ git clone https://github.com/fsenf/CTyPyTool
 ```
 
 #### Installing Dependencies:
