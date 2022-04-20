@@ -73,7 +73,7 @@ def create_training_vectors(params, training_sets, masked_indices, verbose):
     # Get vectors from all added training sets
     vectors, labels = td.sample_training_sets(
         training_sets=training_sets,
-        n_samples=params["samples"],
+        n=params["samples"],
         hours=params["hours"],
         indices=masked_indices,
         input_channels=params["input_channels"],
