@@ -1,3 +1,21 @@
+import parameter_handler
+import tools.nwcsaf_tools as nwc
+
+
+import numpy as np
+import xarray as xr
+import warnings
+
+import matplotlib.pyplot as plt
+import cartopy
+import cartopy.crs as ccrs
+
+import tools.data_handling as dh
+import tools.training_data as td
+import tools.file_handling as fh
+import tools.confusion as conf
+
+
 class cloud_plotter:
     def __init__(self, project_path=None):
         self.project_path = project_path
@@ -33,6 +51,7 @@ class cloud_plotter:
         self.param_handler.save_filelists(self.project_path)
 
     def plot_data(
+        self,
         label_file,
         reduce_to_mask=True,
         extent=None,
@@ -87,6 +106,7 @@ class cloud_plotter:
             return ax, data
 
     def plot_probas(
+        self,
         label_file,
         truth_file=None,
         georef_file=None,
@@ -98,10 +118,10 @@ class cloud_plotter:
         show=True,
     ):
 
-        gt = not truth_file is None
+        gt = truth_file is not None
         extent = [-6, 42, 25, 50]
         length = 2
-        if not truth_file is None:
+        if truth_file is not None:
             length += 1
         if plot_corr:
             length += 1
@@ -135,7 +155,7 @@ class cloud_plotter:
                 cb_pos=cb_p[i],
             )
 
-            if not plot_titles is None:
+            if plot_titles is not None:
                 ax.set_title(plot_titles[i], fontsize=20)
 
             if gt and i == 1:
@@ -150,6 +170,7 @@ class cloud_plotter:
         plt.close()
 
     def plot_multiple(
+        self,
         label_files,
         truth_file=None,
         georef_file=None,
@@ -164,13 +185,13 @@ class cloud_plotter:
 
         length = len(label_files)
         lab_lenght = length
-        if not truth_file is None:
+        if truth_file is not None:
             length += 1
         fig = plt.figure(figsize=(length * 13, 8))
         fig.patch.set_alpha(1)
 
         # plot ground truth
-        if not truth_file is None:
+        if truth_file is not None:
             pos = [1, length, length]
             ax, truth = self.plot_data(
                 truth_file,
@@ -192,10 +213,10 @@ class cloud_plotter:
                 label_files[i], reduce_to_mask, pos=pos, subplot=True
             )
 
-            if not plot_titles is None and i < len(plot_titles):
+            if plot_titles is not None and i < len(plot_titles):
                 ax.set_title(plot_titles[i], fontsize=20)
 
-            if not truth_file is None and i < lab_lenght:
+            if truth_file is not None and i < lab_lenght:
                 text = fh.get_match_string(data, truth)
                 ax.text(10, 22, text, fontsize=16)
 
@@ -207,6 +228,7 @@ class cloud_plotter:
         plt.close()
 
     def get_plotable_data(
+        self,
         input_data=None,
         data_file=None,
         georef_file=None,
@@ -222,7 +244,7 @@ class cloud_plotter:
             input_data = xr.open_dataset(data_file)
 
         if mode == "label":
-            data = input_data[self.cloudtype_channel][0]
+            data = input_data[self.params["cloudtype_channel"]][0]
         elif mode == "proba":
             data = np.amax(input_data["label_probability"], axis=2)
 
@@ -230,7 +252,7 @@ class cloud_plotter:
         indices = None
         if reduce_to_mask:
             if self.masked_indices is None:
-                self.set_indices_from_mask(self.mask_file, self.mask_key)
+                dh.set_indices_from_mask(self.params)
             indices = self.masked_indices
         else:
             indices = np.where(~np.isnan(data))
@@ -241,12 +263,12 @@ class cloud_plotter:
         out_data[indices[0], indices[1]] = data
         if mode == "label":
             out_data = fh.switch_nwcsaf_version(out_data, target_version="v2018")
-            td.merge_labels(out_data, self.merge_list)
+            td.merge_labels(out_data, self.params["merge_list"])
         if not get_coords:
             return out_data
         else:
             if georef_file is None:
-                georef_file = self.georef_file
+                georef_file = self.params["georef_file"]
             if georef_file is None:
                 x = input_data.coords["lon"]
                 y = input_data.coords["lat"]
@@ -257,7 +279,7 @@ class cloud_plotter:
 
             return out_data, x, y
 
-    def plot_coocurrence_matrix(label_file, truth_file, normalize=True):
+    def plot_coocurrence_matrix(self, label_file, truth_file, normalize=True):
         label_data = self.get_plotable_data(
             data_file=label_file, reduce_to_mask=True, get_coords=False
         )
