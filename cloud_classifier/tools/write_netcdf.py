@@ -2,6 +2,7 @@ import xarray as xr
 import numpy as np
 import pathlib
 import os
+import tools.file_handling as fh
 
 
 def get_reference_filepath(project_path):
@@ -10,6 +11,7 @@ def get_reference_filepath(project_path):
 
 def create_reference_file(project_path, training_sets, cloudtype_channel):
     ref_path = get_reference_filepath(project_path)
+    fh.create_subfolders(path=ref_path, contains_filename=True)
     if pathlib.Path(ref_path).is_file():  # check if already exists
         return
 
