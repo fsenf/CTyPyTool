@@ -1,5 +1,4 @@
 import random
-import xarray as xr
 import numpy as np
 import os
 import re
@@ -7,12 +6,16 @@ import re
 
 
 
-def create_subfolders(path, project_path):
-    path = os.path.normpath(path)
-    folders = path.split(os.sep)
-    current_path = project_path
+def create_subfolders(path):
+    normpath = os.path.normpath(path)
+    red_path = os.path.split(normpath)[0]  # remove possible file nominator
+    folders = red_path.split(os.sep)       # split path along os specific seperators
+    current_path = None
     for fol in folders:
-        current_path = os.path.join(current_path, fol)
+        if (current_path is None):
+            current_path = fol
+        else:
+            current_path = os.path.join(current_path, fol)
         if(not os.path.isdir(current_path)):
             os.mkdir(current_path)
 

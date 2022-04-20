@@ -105,7 +105,7 @@ class data_handler(base_class):
         if (self.training_sets is None):
             self.training_sets = []
         self.training_sets.append([filename_data, filename_labels])
-        if reference_file is None:
+        if self.reference_file is None:
             self.reference_file = filename_labels
         return
 
