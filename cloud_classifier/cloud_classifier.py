@@ -22,15 +22,16 @@ importlib.reload(conf)
 
 
 class cloud_classifier:
-    def __init__(self):
-        self.project_path = None
+    def __init__(self, project_path=None):
+
+        self.project_path = project_path
         self.param_handler = parameter_handler.parameter_handler()
 
         self.params = self.param_handler.parameters
         self.filelists = self.param_handler.filelists
 
-        self.trainer = cloud_trainer.cloud_trainer()
         self.masked_indices = None
+        self.trainer = cloud_trainer.cloud_trainer()
 
     # ############ CREATING, LOADING AND SAVING PROJECTS ######################
     # ########################################################################
@@ -295,14 +296,13 @@ class cloud_classifier:
             label_file = self.label_files[i]
             truth_file = self.evaluation_sets[i][1]
             timestamp = self.eval_timestamps[i]
-            if correlation:
-                self.save_coorMatrix(
-                    label_file=label_file,
-                    truth_file=truth_file,
-                    timestamp=timestamp,
-                    verbose=verbose,
-                    show=show,
-                )
+            self.save_coorMatrix(
+                label_file=label_file,
+                truth_file=truth_file,
+                timestamp=timestamp,
+                verbose=verbose,
+                show=show,
+            )
             if comparison:
                 self.save_comparePlot(
                     label_file=label_file,
