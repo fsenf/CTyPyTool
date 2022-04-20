@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 requests = "*"
 numpy = "*"
+netcdf4 = "*"
+h5netcdf = "*"
 
 [dev-packages]
 

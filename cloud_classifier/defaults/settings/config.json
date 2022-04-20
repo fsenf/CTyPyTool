@@ -1,5 +1,4 @@
 {    
-    "verbose": false,
     "classifier_type": "Forest",
     "max_depth": 35,
     "ccp_alpha": 0,
@@ -11,5 +10,4 @@
     "difference_vectors": true,
     "original_values": true,
     "samples": 100
-
 }
