@@ -1,6 +1,3 @@
-import parameter_handler
-
-
 import numpy as np
 import xarray as xr
 import warnings
@@ -15,46 +12,15 @@ import tools.file_handling as fh
 import tools.nwcsaf_tools as nwc
 import tools.confusion as conf
 
+import cloud_project
+
 
 import importlib
 
 importlib.reload(nwc)
 
 
-class cloud_plotter:
-    def __init__(self, project_path=None):
-        self.project_path = project_path
-        self.param_handler = parameter_handler.parameter_handler()
-
-        self.params = self.param_handler.parameters
-        self.filelists = self.param_handler.filelists
-
-        self.masked_indices = None
-
-    def load_project(self, path):
-        """
-        Loads a persistant classifier project.
-
-        Parameters
-        ----------
-        path : string
-            Path to the stored project
-        """
-        self.project_path = path
-        self.load_project_data()
-
-    def load_project_data(self):
-        if self.project_path is None:
-            raise ValueError("Project path not set")
-        self.param_handler.load_parameters(self.project_path)
-        self.param_handler.load_filelists(self.project_path)
-
-    def save_project_data(self):
-        if self.project_path is None:
-            raise ValueError("Project path not set")
-        self.param_handler.save_parameters(self.project_path)
-        self.param_handler.save_filelists(self.project_path)
-
+class cloud_plotter(cloud_project.cloud_project):
     def plot_data(
         self,
         label_file,
