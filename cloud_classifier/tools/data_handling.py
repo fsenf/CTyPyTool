@@ -89,7 +89,7 @@ def create_training_vectors(params, training_sets, masked_indices, verbose):
         vectors = td.create_difference_vectors(vectors, params["original_values"])
 
     if params["nwcsaf_in_version"] == "auto":
-        params["nwcsaf_in_version"] = nwc.check_nwcsaf_version(labels, verbose=verbose)
+        params["nwcsaf_in_version"] = nwc.check_nwcsaf_version(labels)
 
     # Check if
     labels = nwc.switch_nwcsaf_version(
