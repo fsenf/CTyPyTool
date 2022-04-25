@@ -61,7 +61,7 @@ def definde_NWCSAF_variables(missing_labels=None):
     return ct_colors, ct_indices, ct_labels
 
 
-def check_nwcsaf_version(labels, verbose):
+def check_nwcsaf_version(labels):
     """
     checks if cloud type labels are mapped by the 2013-netcdf standard
 
