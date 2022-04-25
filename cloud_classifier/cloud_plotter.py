@@ -124,7 +124,7 @@ class cloud_plotter:
     ):
 
         gt = truth_file is not None
-        extent = [-6, 42, 25, 50]
+        # extent = [-6, 42, 25, 50]
         length = 2
         if truth_file is not None:
             length += 1
@@ -186,7 +186,7 @@ class cloud_plotter:
         show=True,
     ):
 
-        extent = [-6, 42, 25, 50]
+        # extent = [-6, 42, 25, 50]
 
         length = len(label_files)
         lab_lenght = length
