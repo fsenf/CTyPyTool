@@ -252,7 +252,7 @@ class cloud_plotter:
         indices = None
         if reduce_to_mask:
             if self.masked_indices is None:
-                dh.set_indices_from_mask(self.params)
+                self.masked_indices = dh.set_indices_from_mask(self.params)
             indices = self.masked_indices
         else:
             indices = np.where(~np.isnan(data))
