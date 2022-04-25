@@ -1,5 +1,4 @@
 import parameter_handler
-import tools.nwcsaf_tools as nwc
 
 
 import numpy as np
@@ -13,7 +12,13 @@ import cartopy.crs as ccrs
 import tools.data_handling as dh
 import tools.training_data as td
 import tools.file_handling as fh
+import tools.nwcsaf_tools as nwc
 import tools.confusion as conf
+
+
+import importlib
+
+importlib.reload(nwc)
 
 
 class cloud_plotter:
@@ -262,7 +267,7 @@ class cloud_plotter:
         data = np.array(data)[indices[0], indices[1]]
         out_data[indices[0], indices[1]] = data
         if mode == "label":
-            out_data = fh.switch_nwcsaf_version(out_data, target_version="v2018")
+            out_data = nwc.switch_nwcsaf_version(out_data, target_version="v2018")
             td.merge_labels(out_data, self.params["merge_list"])
         if not get_coords:
             return out_data
