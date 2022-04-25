@@ -1,20 +1,13 @@
 import numpy as np
 import xarray as xr
 import h5py
-import re
 import os
 from joblib import dump, load
-import warnings
 
-
-import matplotlib.pyplot as plt
-import cartopy
-import cartopy.crs as ccrs
 
 import tools.training_data as td
 import tools.file_handling as fh
 import tools.nwcsaf_tools as nwc
-import tools.confusion as conf
 
 #
 import importlib
