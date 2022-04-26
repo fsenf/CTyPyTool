@@ -37,6 +37,7 @@ class cloud_classifier(cloud_project.cloud_project):
         create_filelist=True,
         create_training_data=True,
     ):
+        self.load_project_data()
         if create_filelist:
             self.create_training_filelist(verbose=verbose)
 
@@ -57,7 +58,7 @@ class cloud_classifier(cloud_project.cloud_project):
         self.trainer.save_classifier(self.project_path, verbose)
 
     def run_prediction_pipeline(self, verbose=True, create_filelist=True):
-
+        self.load_project_data()
         if create_filelist:
             self.extract_input_filelist(verbose=verbose)
 
