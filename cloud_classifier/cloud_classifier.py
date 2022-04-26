@@ -186,24 +186,6 @@ class cloud_classifier(cloud_project.cloud_project):
             print("Labels saved as " + name)
         return filepath
 
-    ### evaluation
-    def create_split_training_filelist(self):
-        satFile_pattern = fh.get_filename_pattern(
-            self.params["sat_file_structure"], self.params["timestamp_length"]
-        )
-        labFile_pattern = fh.get_filename_pattern(
-            self.params["label_file_structure"], self.params["timestamp_length"]
-        )
-        datasets = fh.generate_filelist_from_folder(
-            self.data_source_folder, satFile_pattern, labFile_pattern
-        )
-
-        self.training_sets, self.evaluation_sets, self.timestamps = fh.split_sets(
-            datasets, satFile_pattern, 24, timesensitive=True
-        )
-        self.input_files = [s[0] for s in self.evaluation_sets]
-        self.save_project_data()
-
     ######################    Evaluation  ######################################
     ############################################################################
 
