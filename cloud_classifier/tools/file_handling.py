@@ -94,7 +94,7 @@ def generate_filelist_from_folder(
         return training_sets
 
 
-def split_sets(dataset, satFile_pattern, eval_size=24, timesensitive=True):
+def split_sets(dataset, satFile_pattern, eval_size, timesensitive=True):
     """
     splits a set of data into an training and an evaluation set
     """
