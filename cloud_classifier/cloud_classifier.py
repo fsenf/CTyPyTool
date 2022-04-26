@@ -36,14 +36,10 @@ class cloud_classifier(cloud_project.cloud_project):
         self,
         verbose=True,
         create_filelist=True,
-        evaluation=False,
         create_training_data=True,
     ):
         if create_filelist:
-            if evaluation:
-                self.create_split_training_filelist()
-            else:
-                self.create_training_filelist(verbose=verbose)
+            self.create_training_filelist(verbose=verbose)
 
         ncdf.create_reference_file(
             self.project_path,
@@ -61,11 +57,9 @@ class cloud_classifier(cloud_project.cloud_project):
         self.trainer.train_classifier(vectors, labels, self.params, verbose)
         self.trainer.save_classifier(self.project_path, verbose)
 
-    def run_prediction_pipeline(
-        self, verbose=True, create_filelist=True, evaluation=False
-    ):
+    def run_prediction_pipeline(self, verbose=True, create_filelist=True):
 
-        if create_filelist and not evaluation:
+        if create_filelist:
             self.extract_input_filelist(verbose=verbose)
 
         self.trainer.load_classifier(self.project_path, verbose=verbose)
