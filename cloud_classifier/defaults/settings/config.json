@@ -1,4 +1,4 @@
-{    
+{
     "classifier_type": "Forest",
     "max_depth": 35,
     "ccp_alpha": 0,

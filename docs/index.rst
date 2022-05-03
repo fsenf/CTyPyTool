@@ -14,9 +14,9 @@ CTyPyTool: A Cloud Typing Python Tool for Verification of Weather Forecasts
 .. toctree::
    :maxdepth: 1
    :caption: Intro
-   
+
    source/README.md
-   
+
 
 .. toctree::
    :maxdepth: 1
@@ -28,7 +28,7 @@ CTyPyTool: A Cloud Typing Python Tool for Verification of Weather Forecasts
 .. toctree::
    :maxdepth: 1
    :caption: Examples
-   
+
    source/Application_of_a_pretrained_classifier.ipynb
    source/Plotting_of_example_data.ipynb
 
