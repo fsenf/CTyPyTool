@@ -15,9 +15,9 @@ class evaluator(cloud_project.cloud_project):
     def copy_filelists(self, source_project):
         self.param_handler.load_filelists(source_project)
         self.param_handler.save_filelists(self.project_path)
+        print("Filelist copied from " + source_project)
 
-    ### evaluation
-    def split_trainingset(self, eval_size=24, timesensitive=True):
+    def create_split_trainingset(self, eval_size=24, timesensitive=True):
         satFile_pattern = fh.get_filename_pattern(
             self.params["sat_file_structure"], self.params["timestamp_length"]
         )
@@ -25,15 +25,21 @@ class evaluator(cloud_project.cloud_project):
             self.params["label_file_structure"], self.params["timestamp_length"]
         )
         datasets = fh.generate_filelist_from_folder(
-            self.data_source_folder, satFile_pattern, labFile_pattern
+            self.params["data_source_folder"], satFile_pattern, labFile_pattern
         )
 
-        self.training_sets, self.evaluation_sets, self.timestamps = fh.split_sets(
+        training_sets, evaluation_sets, timestamps = fh.split_sets(
             datasets, satFile_pattern, eval_size=eval_size, timesensitive=timesensitive
         )
 
-        self.input_files = [s[0] for s in self.evaluation_sets]
-        self.save_project_data()
+        self.param_handler.set_filelists(
+            training_sets=training_sets,
+            evaluation_sets=evaluation_sets,
+            input_files=[s[0] for s in evaluation_sets],
+            eval_timestamps=timestamps,
+        )
+
+        self.param_handler.save_filelists(self.project_path)
 
     def create_evaluation_plots(
         self,
@@ -46,10 +52,10 @@ class evaluator(cloud_project.cloud_project):
         verbose=True,
     ):
 
-        for i in range(len(self.label_files)):
-            label_file = self.label_files[i]
-            truth_file = self.evaluation_sets[i][1]
-            timestamp = self.eval_timestamps[i]
+        for i in range(len(self.filelists["label_files"])):
+            label_file = self.filelists["label_files"][i]
+            truth_file = self.filelists["evaluation_sets"][i][1]
+            timestamp = self.filelists["eval_timestamps"][i]
             self.save_coorMatrix(
                 label_file=label_file,
                 truth_file=truth_file,
