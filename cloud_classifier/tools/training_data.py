@@ -30,7 +30,9 @@ def sample_training_sets(
     for t_set in training_sets:
         if verbose:
             i += 1
-            print("Sampling dataset " + str(i) + "/" + str(len(training_sets)))
+            print(
+                "Sampling dataset " + str(i) + "/" + str(len(training_sets)), end="\r"
+            )
         # read data
         sat_data = xr.open_dataset(t_set[0])
         # check if indices have benn selected
