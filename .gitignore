@@ -7,5 +7,5 @@ notebooks/test*.ipynb
 *sublime-workspace
 *sublime-project
 dev_notebooks/
-../.pre-commit-config.yaml
+*.pre-commit-config.yaml
 TODOs
