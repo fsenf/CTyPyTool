@@ -9,7 +9,7 @@ class evaluator(cloud_project.cloud_project):
     def __init__(self, project_path=None):
 
         super().__init__(project_path)
-        self.classifier = cloud_classifier.cloud_classifier(project_path=project_path)
+        self.cloud_class = cloud_classifier.cloud_classifier(project_path=project_path)
         self.plotter = cloud_plotter.cloud_plotter()
 
     def copy_filelists(self, source_project):
@@ -40,6 +40,13 @@ class evaluator(cloud_project.cloud_project):
         )
 
         self.param_handler.save_filelists(self.project_path)
+
+    def train_evaluation_classifier(self):
+        self.cloud_class.load_project(self.project_path)
+        print("Trainig evaluation classifier")
+        self.cloud_class.run_training_pipeline(create_filelist=False)
+        print("Prediciting evaluation labels")
+        self.cloud_class.run_prediction_pipeline(create_filelist=False)
 
     def create_evaluation_plots(
         self,
