@@ -6,17 +6,20 @@ import re
 
 def create_subfolders(path, contains_filename=True):
     if contains_filename:
-        path = os.path.split(path)[0]  # remove file nominator
+        path = os.path.split(path)[0]  # remove file from path
+    current_path = None
+    if path.startswith("/"):
+        current_path = "/"
+
     folders = path.split(os.sep)  # split path along os specific seperators
-    current_path = ""
     for fol in folders:
         if not current_path:
             current_path = fol
         else:
             current_path = os.path.join(current_path, fol)
-        if not os.path.exists(current_path):
-            if current_path:
-                os.mkdir(current_path)
+
+        if not os.path.isdir(current_path):
+            os.mkdir(current_path)
 
 
 def get_filename_pattern(structure, t_length):
