@@ -3,6 +3,8 @@ import parameter_handler
 import tools.file_handling as fh
 import cloud_classifier
 import cloud_plotter
+import os
+import tools.confusion as conf
 
 
 class evaluator(cloud_project.cloud_project):
@@ -51,25 +53,27 @@ class evaluator(cloud_project.cloud_project):
     def create_evaluation_plots(
         self,
         correlation=False,
-        probas=False,
+        probabilities=False,
         comparison=False,
         cmp_targets=None,
         plot_titles=None,
         show=True,
         verbose=True,
     ):
+        self.plotter.load_project(self.project_path)
 
         for i in range(len(self.filelists["label_files"])):
             label_file = self.filelists["label_files"][i]
             truth_file = self.filelists["evaluation_sets"][i][1]
             timestamp = self.filelists["eval_timestamps"][i]
-            self.save_coorMatrix(
-                label_file=label_file,
-                truth_file=truth_file,
-                timestamp=timestamp,
-                verbose=verbose,
-                show=show,
-            )
+            if correlation:
+                self.save_coorMatrix(
+                    label_file=label_file,
+                    truth_file=truth_file,
+                    timestamp=timestamp,
+                    verbose=verbose,
+                    show=show,
+                )
             if comparison:
                 self.save_comparePlot(
                     label_file=label_file,
@@ -80,7 +84,7 @@ class evaluator(cloud_project.cloud_project):
                     verbose=verbose,
                     show=show,
                 )
-            if probas:
+            if probabilities:
                 self.save_probasPlot(
                     label_file=label_file,
                     truth_file=truth_file,
@@ -100,7 +104,9 @@ class evaluator(cloud_project.cloud_project):
         verbose=True,
         show=True,
     ):
-
+        if compare_projects is None:
+            print("No projects for comparison given!")
+            return
         all_files = [label_file]
         filename = os.path.split(label_file)[1]
         for proj_path in compare_projects:
@@ -178,11 +184,11 @@ class evaluator(cloud_project.cloud_project):
         if filename is None:
             filename = timestamp + "_CoocurrenceMatrix.png"
         if label_data is None:
-            label_data = self.get_plotable_data(
+            label_data = self.plotter.get_plotable_data(
                 data_file=label_file, reduce_to_mask=True, get_coords=False
             )
         if truth_data is None:
-            truth_data = self.get_plotable_data(
+            truth_data = self.plotter.get_plotable_data(
                 data_file=truth_file, reduce_to_mask=True, get_coords=False
             )
 
@@ -190,7 +196,7 @@ class evaluator(cloud_project.cloud_project):
         fh.create_subfolders(path)
 
         conf.plot_coocurrence_matrix(
-            label_data, truth_data, normalize=normalize, save_file=path
+            label_data, truth_data, normalize=normalize, save_file=path, show=show
         )
         if verbose:
             print("Correlation Matrix saved at " + path, filename)
@@ -201,10 +207,10 @@ class evaluator(cloud_project.cloud_project):
             label_file = self.label_files[i]
             truth_file = self.evaluation_sets[i][1]
             all_labels.append(
-                self.get_plotable_data(data_file=label_file, get_coords=False)
+                self.plotter.get_plotable_data(data_file=label_file, get_coords=False)
             )
             all_truth.append(
-                self.get_plotable_data(data_file=truth_file, get_coords=False)
+                self.plotter.get_plotable_data(data_file=truth_file, get_coords=False)
             )
         all_labels, all_truth = fh.clean_eval_data(all_labels, all_truth)
 
