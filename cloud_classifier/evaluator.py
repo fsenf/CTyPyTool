@@ -199,7 +199,7 @@ class evaluator(cloud_project.cloud_project):
             label_data, truth_data, normalize=normalize, save_file=path, show=show
         )
         if verbose:
-            print("Correlation Matrix saved at " + path, filename)
+            print("Correlation Matrix saved as", filename)
 
     def get_overallCoocurrence(self, show=False):
         all_labels, all_truth = [], []
