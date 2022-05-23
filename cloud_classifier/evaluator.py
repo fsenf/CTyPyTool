@@ -64,8 +64,8 @@ class evaluator(cloud_project.cloud_project):
         correlation=False,
         probabilities=False,
         comparison=False,
-        cmp_targets=None,
-        plot_titles=None,
+        cmp_targets=[],
+        plot_titles=[],
         show=True,
         verbose=True,
     ):
@@ -95,7 +95,7 @@ class evaluator(cloud_project.cloud_project):
                     show=show,
                 )
             if probabilities:
-                if plot_titles is None:
+                if not plot_titles:
                     plot_titles = ["Probability Score", "Prediction"]
                 self.save_probasPlot(
                     label_file=label_file,
@@ -111,14 +111,12 @@ class evaluator(cloud_project.cloud_project):
         label_file,
         truth_file,
         timestamp,
-        compare_projects=None,
+        compare_projects=[],
         plot_titles=None,
         verbose=True,
         show=True,
     ):
-        if compare_projects is None:
-            print("No projects for comparison given!")
-            return
+
         all_files = [label_file]
         filename = os.path.split(label_file)[1]
         for proj_path in compare_projects:
@@ -133,7 +131,7 @@ class evaluator(cloud_project.cloud_project):
         self.plotter.plot_multiple(
             all_files,
             truth_file,
-            georef_file=self.georef_file,
+            georef_file=self.params["georef_file"],
             reduce_to_mask=True,
             plot_titles=plot_titles,
             hour=hour,
