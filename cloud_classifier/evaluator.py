@@ -64,6 +64,7 @@ class evaluator(cloud_project.cloud_project):
         correlation=False,
         probabilities=False,
         comparison=False,
+        overallCorrelation=False,
         cmp_targets=[],
         plot_titles=[],
         show=True,
@@ -105,6 +106,8 @@ class evaluator(cloud_project.cloud_project):
                     verbose=verbose,
                     show=show,
                 )
+        if overallCorrelation:
+            self.get_overallCoocurrence(show=show)
 
     def save_comparePlot(
         self,
@@ -213,9 +216,9 @@ class evaluator(cloud_project.cloud_project):
 
     def get_overallCoocurrence(self, show=False):
         all_labels, all_truth = [], []
-        for i in range(len(self.label_files)):
-            label_file = self.label_files[i]
-            truth_file = self.evaluation_sets[i][1]
+        for i in range(len(self.filelists["label_files"])):
+            label_file = self.filelists["label_files"][i]
+            truth_file = self.filelists["evaluation_sets"][i][1]
             all_labels.append(
                 self.plotter.get_plotable_data(data_file=label_file, get_coords=False)
             )
