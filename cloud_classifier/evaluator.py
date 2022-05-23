@@ -6,6 +6,10 @@ import cloud_plotter
 import os
 import tools.confusion as conf
 
+import importlib
+
+importlib.reload(cloud_plotter)
+
 
 class evaluator(cloud_project.cloud_project):
     def __init__(self, project_path=None):
@@ -15,11 +19,16 @@ class evaluator(cloud_project.cloud_project):
         self.plotter = cloud_plotter.cloud_plotter()
 
     def copy_filelists(self, source_project):
+        labels_tmp = self.filelists["label_files"]
         self.param_handler.load_filelists(source_project)
+        self.filelists[
+            "label_files"
+        ] = labels_tmp  # don't copy project specific labels safe space
         self.param_handler.save_filelists(self.project_path)
         print("Filelist copied from " + source_project)
 
     def create_split_trainingset(self, eval_size=24, timesensitive=True):
+        self.load_project_data()
         satFile_pattern = fh.get_filename_pattern(
             self.params["sat_file_structure"], self.params["timestamp_length"]
         )
@@ -43,7 +52,7 @@ class evaluator(cloud_project.cloud_project):
 
         self.param_handler.save_filelists(self.project_path)
 
-    def train_evaluation_classifier(self):
+    def create_evaluation_data(self):
         self.cloud_class.load_project(self.project_path)
         print("Trainig evaluation classifier")
         self.cloud_class.run_training_pipeline(create_filelist=False)
@@ -61,6 +70,7 @@ class evaluator(cloud_project.cloud_project):
         verbose=True,
     ):
         self.plotter.load_project(self.project_path)
+        self.load_project_data()
 
         for i in range(len(self.filelists["label_files"])):
             label_file = self.filelists["label_files"][i]
@@ -118,7 +128,7 @@ class evaluator(cloud_project.cloud_project):
         fh.create_subfolders(path, self.project_path)
 
         hour = int(timestamp[-4:-2])
-        self.plot_multiple(
+        self.plotter.plot_multiple(
             all_files,
             truth_file,
             georef_file=self.georef_file,
@@ -129,7 +139,7 @@ class evaluator(cloud_project.cloud_project):
             show=show,
         )
         if verbose:
-            print("Comparison Plot saved at " + path)
+            print("Comparison Plot saved as " + filename)
 
     def save_probasPlot(
         self,
@@ -148,10 +158,10 @@ class evaluator(cloud_project.cloud_project):
         fh.create_subfolders(path, self.project_path)
 
         hour = int(timestamp[-4:-2])
-        self.plot_probas(
+        self.plotter.plot_probas(
             label_file,
             truth_file,
-            georef_file=self.georef_file,
+            georef_file=self.params["georef_file"],
             reduce_to_mask=True,
             plot_titles=plot_titles,
             hour=hour,
@@ -159,7 +169,7 @@ class evaluator(cloud_project.cloud_project):
             show=show,
         )
         if verbose:
-            print("Probability Plot saved at " + path)
+            print("Probability Plot saved as " + filename)
 
     def save_coorMatrix(
         self,
