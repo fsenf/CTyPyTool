@@ -18,7 +18,7 @@ class evaluator(cloud_project.cloud_project):
         self.cloud_class = cloud_classifier.cloud_classifier(project_path=project_path)
         self.plotter = cloud_plotter.cloud_plotter()
 
-    def copy_filelists(self, source_project):
+    def copy_evaluation_split(self, source_project):
         labels_tmp = self.filelists["label_files"]
         self.param_handler.load_filelists(source_project)
         self.filelists[
