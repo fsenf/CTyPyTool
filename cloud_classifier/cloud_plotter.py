@@ -213,7 +213,6 @@ class cloud_plotter(cloud_project.cloud_project):
 
         elif input_data is None:
             input_data = xr.open_dataset(data_file)
-        print(data_file)
         if mode == "label":
             data = input_data[self.params["cloudtype_channel"]][0]
         elif mode == "proba":
