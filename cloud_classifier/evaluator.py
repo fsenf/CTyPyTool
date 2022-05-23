@@ -95,6 +95,8 @@ class evaluator(cloud_project.cloud_project):
                     show=show,
                 )
             if probabilities:
+                if plot_titles is None:
+                    plot_titles = ["Probability Score", "Prediction"]
                 self.save_probasPlot(
                     label_file=label_file,
                     truth_file=truth_file,
