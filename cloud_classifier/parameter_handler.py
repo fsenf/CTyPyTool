@@ -8,8 +8,8 @@ class parameter_handler:
     Provides functionaltiy of parameter management for cloud-classifier projects.
     Parameteres and filelists are provided as dictionaries, which are
     initalized with default values.
-    Parameters and filelist can be loaded and saved in the file structure of
-    a cloud classifier project
+    Parameters and filelist can be loaded and saved into the file structure of
+    a cloud classifier project.
     """
 
     def __init__(self, path=None):
@@ -18,7 +18,7 @@ class parameter_handler:
 
         Parameters
         ----------
-        path : path of project, optional
+        path : string, optional
             Project path from which parameters and filelists are initalized.
             If None initialization will read from the 'defaults' folder.
         """
@@ -87,39 +87,100 @@ class parameter_handler:
         self.load_filelists(path=path)
 
     def set_parameters(self, **kwargs):
+        """
+        Sets values of the parameters dictionary.
+
+        Parameters
+        ----------
+        **kwargs : dictionary
+            Dictionary of named parameters.
+        """
         self.parameters.update(
             (k, v) for k, v in kwargs.items() if k in self.parameters
         )
 
     def set_filelists(self, **kwargs):
+        """
+        Sets values of the filelists dictionary.
+
+        Parameters
+        ----------
+        **kwargs : dictionary
+            Dictionary of named filelists.
+        """
         self.filelists.update((k, v) for k, v in kwargs.items() if k in self.filelists)
 
     def extend_filelists(self, **kwargs):
+        """
+        Extends entries of the filelists dictionary.
+
+        Parameters
+        ----------
+        **kwargs : dictionary
+            Dictionary of named filelists.
+        """
         for k in self.filelists:
             if k in kwargs:
                 self.filelists[k].extend(kwargs[k])
 
     def load_parameters(self, path):
+        """
+        Loads parameters from file.
+
+        Parameters
+        ----------
+        path : string
+            Filepath of the parameter file.
+        """
         for file in self.__setting_files:
             filepath = os.path.join(path, "settings", file)
             self.__load_data(filepath=filepath, dictionary=self.parameters)
 
     def load_filelists(self, path):
+        """
+        Loads filelists from file.
+
+        Parameters
+        ----------
+        path : string
+            Filepath of the filelist file.
+        """
         for file in self.__filelists_files:
             filepath = os.path.join(path, "filelists", file)
             self.__load_data(filepath=filepath, dictionary=self.filelists)
 
     def save_parameters(self, path):
+        """
+        Saves parameters to file.
+
+        Parameters
+        ----------
+        path : string
+            Filepath of the parameter file.
+        """
         for file in self.__setting_files:
             filepath = os.path.join(path, "settings", file)
             self.__save_data(dictionary=self.parameters, filepath=filepath)
 
     def save_filelists(self, path):
+        """
+        Saves filelists to file.
+
+        Parameters
+        ----------
+        path : string
+            Filepath of the filelist file.
+        """
         for file in self.__filelists_files:
             filepath = os.path.join(path, "filelists", file)
             self.__save_data(dictionary=self.filelists, filepath=filepath)
 
     def __load_data(self, filepath, dictionary):
+        """
+        Private function that performs the logic of loading a dictonary file and
+        updating the version hold in memory with the loaded values.
+
+        """
         with open(filepath, "r") as parameters:
             kwargs = json.load(parameters)
             dictionary.update(
@@ -127,7 +188,11 @@ class parameter_handler:
             )
 
     def __save_data(self, dictionary, filepath):
-        # read saved data
+        """
+        Private function that performs the logic of updating a dicitonary file with
+        the values hold in memory.
+
+        """
         with open(filepath, "r") as outfile:
             saved_data = json.load(outfile)
             # update saved data
@@ -140,4 +205,12 @@ class parameter_handler:
             outfile.write(json_obj)
 
     def initalize_settings(self, path):
+        """
+        Initalizes a project dictionary with the default files.
+
+        Parameters
+        ----------
+        path : string
+            Filepath of the project dictionary.
+        """
         shutil.copytree(self.__default_path, path + "/")
