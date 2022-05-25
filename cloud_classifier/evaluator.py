@@ -197,11 +197,11 @@ class evaluator(cloud_project.cloud_project):
         if filename is None:
             filename = timestamp + "_CoocurrenceMatrix.png"
         if label_data is None:
-            label_data = self.plotter.get_plotable_data(
+            label_data = self.plotter.get_plottable_data(
                 data_file=label_file, reduce_to_mask=True, get_coords=False
             )
         if truth_data is None:
-            truth_data = self.plotter.get_plotable_data(
+            truth_data = self.plotter.get_plottable_data(
                 data_file=truth_file, reduce_to_mask=True, get_coords=False
             )
 
@@ -220,10 +220,10 @@ class evaluator(cloud_project.cloud_project):
             label_file = self.filelists["label_files"][i]
             truth_file = self.filelists["evaluation_sets"][i][1]
             all_labels.append(
-                self.plotter.get_plotable_data(data_file=label_file, get_coords=False)
+                self.plotter.get_plottable_data(data_file=label_file, get_coords=False)
             )
             all_truth.append(
-                self.plotter.get_plotable_data(data_file=truth_file, get_coords=False)
+                self.plotter.get_plottable_data(data_file=truth_file, get_coords=False)
             )
         all_labels, all_truth = fh.clean_eval_data(all_labels, all_truth)
 
