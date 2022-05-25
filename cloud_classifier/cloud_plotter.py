@@ -21,11 +21,17 @@ importlib.reload(nwc)
 
 
 class cloud_plotter(cloud_project.cloud_project):
+
+    """
+    Plotting class building on cloud_project class.
+    Provides functionality of preparing and plotting data.
+    """
+
     def plot_data(
         self,
         label_file,
         reduce_to_mask=True,
-        extent=None,
+        extent=[-6, 42, 25, 50],
         cmap="hot",
         mode="label",
         subplot=False,
@@ -33,7 +39,30 @@ class cloud_plotter(cloud_project.cloud_project):
         colorbar=False,
         cb_pos=0.95,
     ):
+        """
+        Basic class for plotting data onto map.
 
+        Parameters
+        ----------
+        label_file : str
+            Filepath of NWCSAF type file from which labels are read.
+        reduce_to_mask : bool, optional
+            If True, data will be reduced to mask specified in the project settings.
+        extent : list , optional
+            Extent of the map sections, default shows mediteranian sea.
+        cmap : str, optional
+            Color mapping of the input data.
+        mode : str, optional
+            Determines mode of plot, 'label' will show the labels, 'proba' the certainity of prediciton.
+        subplot : bool, optional
+            If True, plot will be integrated as subplot into larger multi-plot image.
+        pos : list, optional
+            Position in image if subplot.
+        colorbar : bool, optional
+            If True, a labbeled colorbar will be added to plot.
+        cb_pos : float, optional
+            Float between 0 and 1. Relative vertical Position of colorbar in plot.
+        """
         if mode == "label":
             ct_colors, ct_indices, ct_labels = nwc.definde_NWCSAF_variables()
             cmap = plt.matplotlib.colors.ListedColormap(ct_colors)
@@ -45,19 +74,16 @@ class cloud_plotter(cloud_project.cloud_project):
 
         if not subplot:
             plt.figure(figsize=(13, 8))
-        if extent is None:
-            extent = [-6, 42, 25, 50]
 
         if subplot:
             ax = plt.subplot(pos[0], pos[1], pos[2], projection=ccrs.PlateCarree())
         else:
-            extent = [-6, 42, 25, 50]
             ax = plt.axes(projection=ccrs.PlateCarree())
 
         ax.coastlines(resolution="50m")
         ax.set_extent(extent)
         ax.add_feature(cartopy.feature.LAND, edgecolor="black")
-        data, x, y = self.get_plotable_data(
+        data, x, y = self.get_plottable_data(
             data_file=label_file, reduce_to_mask=reduce_to_mask, mode=mode
         )
         with warnings.catch_warnings():
@@ -83,18 +109,39 @@ class cloud_plotter(cloud_project.cloud_project):
         georef_file=None,
         reduce_to_mask=True,
         plot_corr=False,
-        plot_titles=None,
+        plot_titles=[],
         hour=None,
         save_file=None,
         show=True,
     ):
+        """
+        Function that plots certainity plot for predicted labels (only for Random Forest)
+        next to label data and optionally the ground truth data in a multi-plot image.
 
+        Parameters
+        ----------
+        label_file : str
+            Filepath of NWCSAF type file from which labels are read.
+        truth_file : str, optional
+            Filepath of NWCSAF type file from which ground truth labels are read.
+            If None, ground truth will not be added to plot.
+        georef_file : str, optional
+            Filepath of georef file from which lat and lon values read.
+            If None, georef file from project settings will be used.
+        reduce_to_mask : bool, optional
+            If True, data will be reduced to mask specified in the project settings.
+        plot_titles : list, optional
+            Plot titles
+        hour : str, optional
+            Time of day from the data. If not None this will marked on the image.
+        save_file : str, optional
+            Filepath for saving the plot. If None, plot will not be saved.
+        show : bool, optional
+            If True, plot will be displayed to the user.
+        """
         gt = truth_file is not None
-        # extent = [-6, 42, 25, 50]
         length = 2
         if truth_file is not None:
-            length += 1
-        if plot_corr:
             length += 1
 
         fig = plt.figure(figsize=(length * 13, 8))
@@ -108,7 +155,7 @@ class cloud_plotter(cloud_project.cloud_project):
             if hour is not None:
                 text = "Time: {:02d}:00".format(hour)
                 ax.text(10, 22, text, fontsize=16)
-            if plot_titles is None or length > len(plot_titles):
+            if plot_titles or length > len(plot_titles):
                 ax.set_title("Ground Truth", fontsize=20)
 
         modes = ["proba", "label"]
@@ -126,7 +173,7 @@ class cloud_plotter(cloud_project.cloud_project):
                 cb_pos=cb_p[i],
             )
 
-            if plot_titles is not None:
+            if plot_titles and len(plot_titles) > i:
                 ax.set_title(plot_titles[i], fontsize=20)
 
             if gt and i == 1:
@@ -151,8 +198,34 @@ class cloud_plotter(cloud_project.cloud_project):
         save_file=None,
         show=True,
     ):
+        """
+        Function that plots the data from multiple label files and optionally the ground truth
+        data in a multi-plot image.
 
-        # extent = [-6, 42, 25, 50]
+
+
+        Parameters
+        ----------
+        label_files : list
+            List of filepaths of NWCSAF type files from which labels are read.
+        truth_file : str, optional
+            Filepath of NWCSAF type file from which ground truth labels are read.
+            If None, ground truth will not be added to plot.
+        georef_file : str, optional
+            Filepath of georef file from which lat and lon values read.
+            If None, georef file from project settings will be used.
+        reduce_to_mask : bool, optional
+            If True, data will be reduced to mask specified in the project settings.
+        plot_titles : list, optional
+            Plot titles
+        hour : str, optional
+            Time of day from the data. If not None this will marked on the image.
+        save_file : str, optional
+            Filepath for saving the plot. If None, plot will not be saved.
+        show : bool, optional
+            If True, plot will be displayed to the user.
+
+        """
 
         length = len(label_files)
         lab_lenght = length
@@ -198,7 +271,7 @@ class cloud_plotter(cloud_project.cloud_project):
             plt.show()
         plt.close()
 
-    def get_plotable_data(
+    def get_plottable_data(
         self,
         input_data=None,
         data_file=None,
@@ -207,7 +280,26 @@ class cloud_plotter(cloud_project.cloud_project):
         get_coords=True,
         mode="label",
     ):
+        """
+        Extracts label and coordinate data from xArray or NWCSAF file.
 
+        Parameters
+        ----------
+        input_data : xarray, optional
+            Dataset containing label data. Needs to be set if 'data_file' is None.
+        data_file : str, optional
+            Filepath of NWCsAF type label file. Needs to be set if 'input_data' is None.
+        georef_file : str, optional
+            Filepath of georef file from which lat and lon values read.
+            If None, georef file from project settings will be used.
+        reduce_to_mask : bool, optional
+            If True, data will be reduced to mask specified in the project settings.
+        get_coords : bool, optional
+            If True, coordinates will be returned with the label data.
+        mode : str, optional
+            If 'label' (default), label data will be extract, if 'proba' classifier certainty will
+            be extracted (only for labels predicted by Random Forest classifer)
+        """
         if input_data is None and data_file is None:
             raise ValueError("No input data given!")
 
@@ -217,6 +309,8 @@ class cloud_plotter(cloud_project.cloud_project):
             data = input_data[self.params["cloudtype_channel"]][0]
         elif mode == "proba":
             data = np.amax(input_data["label_probability"], axis=2)
+        else:
+            raise ValueError("Unsupported mode!")
 
         # shrink to area, transform to numpy
         indices = None
@@ -249,11 +343,27 @@ class cloud_plotter(cloud_project.cloud_project):
 
             return out_data, x, y
 
-    def plot_coocurrence_matrix(self, label_file, truth_file, normalize=True):
-        label_data = self.get_plotable_data(
+    def plot_coocurrence_matrix(
+        self, label_file, truth_file, normalize=True, show=True
+    ):
+        """
+        Plots coocurrence Matrix between predicted labels and ground truth.
+
+        Parameters
+        ----------
+        label_file : str
+            Filepath of NWSCAF type predicted label file.
+        truth_file : TYPE
+            Filepath of NWSCAF type ground truth label file.
+        normalize : bool, optional
+            If True, values will be normalized.
+        show : bool, optional
+            If True, plot will be displayed to the user.
+        """
+        label_data = self.get_plottable_data(
             data_file=label_file, reduce_to_mask=True, get_coords=False
         )
-        truth_data = self.get_plotable_data(
+        truth_data = self.get_plottable_data(
             data_file=truth_file, reduce_to_mask=True, get_coords=False
         )
         conf.plot_coocurrence_matrix(
