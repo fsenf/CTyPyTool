@@ -10,6 +10,13 @@ class parameter_handler:
     initalized with default values.
     Parameters and filelist can be loaded and saved into the file structure of
     a cloud classifier project.
+
+    Attributes
+    ----------
+    filelists : dictionary
+        Dictionary of filelist the parameter handler manages.
+    parameters : dictionary
+        Dictionary of parameters the parameter handler manages.
     """
 
     def __init__(self, path=None):
