@@ -155,7 +155,7 @@ class cloud_classifier(cloud_project.cloud_project):
             folder=self.params["input_source_folder"],
             satFile_pattern=satFile_pattern,
             labFile_pattern=labFile_pattern,
-            only_sataData=True,
+            only_satData=True,
         )
 
         self.param_handler.set_filelists(input_files=input_files)
