@@ -27,7 +27,7 @@ This description is developed for the application of our cloud classification to
 * **Get the git repository** (using `git clone`)
 
     ```
-    > clone https://github.com/fsenf/CTyPyTool.git
+    > git clone https://github.com/fsenf/CTyPyTool.git
     Cloning into 'CTyPyTool'...
     remote: Enumerating objects: 587, done.
     remote: Counting objects: 100% (587/587), done.
@@ -84,8 +84,9 @@ This description is developed for the application of our cloud classification to
 
 * start the download of zips with (currently located on swiftbrowser; later this will move on zenodo)
 
-    ```
-    wget -r -H -N --cut-dirs=3 --content-disposition --no-directories -I "/v1/" "https://swiftbrowser.dkrz.de/tcl_objects/2022-05-01T09:29:56Z/r_db907a4d5abc7b6fba06b617ffc39153e1e7b80f/w_c44c1a86d8898dda37bdd760bc340eb62292bd24/dkrz_d7550ef1-c227-4463-a6a7-29c14dc05fde/cloud_typing_project/0/classifier/?show_all"
+    ```bash
+    link="https://swiftbrowser.dkrz.de/tcl_objects/2023-10-14T14:41:05Z/r_7d20b33512e14d8b56ea40e25aa35978bfc3921f/w_/dkrz_d7550ef1-c227-4463-
+    wget -r -H -N --cut-dirs=3 --content-disposition --no-directories -I "/v1/" "${link}/?show_all"
     ```
 
     The `*zip` Files contain pretrained classifiers. The `index.html?show_all` also comes along but is not needed.
