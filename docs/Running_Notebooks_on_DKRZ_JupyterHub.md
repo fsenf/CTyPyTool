@@ -85,7 +85,7 @@ This description is developed for the application of our cloud classification to
 * start the download of zips with (currently located on swiftbrowser; later this will move on zenodo)
 
     ```bash
-    link="https://swiftbrowser.dkrz.de/tcl_objects/2023-10-14T14:41:05Z/r_7d20b33512e14d8b56ea40e25aa35978bfc3921f/w_/dkrz_d7550ef1-c227-4463-
+    link="https://swiftbrowser.dkrz.de/tcl_objects/2023-10-14T14:41:05Z/r_7d20b33512e14d8b56ea40e25aa35978bfc3921f/w_/dkrz_d7550ef1-c227-4463-a6a7-29c14dc05fde/cloud_typing_project/11/classifier/"
     wget -r -H -N --cut-dirs=3 --content-disposition --no-directories -I "/v1/" "${link}/?show_all"
     ```
 
