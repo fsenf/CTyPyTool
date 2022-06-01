@@ -12,22 +12,40 @@ importlib.reload(cloud_plotter)
 
 
 class evaluator(cloud_project.cloud_project):
+
+    """
+    Class that provides functionality for comparing classifiers with different approaches
+    or training parameters with each other.
+
+    Attributes
+    ----------
+    cloud_class : cloud_classifer
+        Cloud classifer instance used by this class to train classifier and predict evaluation labels.
+    plotter : cloud_plotter
+        Cloud plotter instance used to plot results.
+    """
+
     def __init__(self, project_path=None):
 
         super().__init__(project_path)
         self.cloud_class = cloud_classifier.cloud_classifier(project_path=project_path)
         self.plotter = cloud_plotter.cloud_plotter()
 
-    def copy_evaluation_split(self, source_project):
-        labels_tmp = self.filelists["label_files"]
-        self.param_handler.load_filelists(source_project)
-        self.filelists[
-            "label_files"
-        ] = labels_tmp  # don't copy project specific labels safe space
-        self.param_handler.save_filelists(self.project_path)
-        print("Filelist copied from " + source_project)
-
     def create_split_trainingset(self, eval_size=24, timesensitive=True):
+        """
+        Creates a filelist from the files in the data_source_folder specified in the
+        project settings and splits the filelist into a training and an evaluation
+        set.
+
+        Parameters
+        ----------
+        eval_size : int, optional
+            Default value 24. Number of datasets in the evaluation set. Must be multiple
+            of 24 if timesensitive is True
+        timesensitive : bool, optional
+            If True, the evaluation set is equally distributed over all hours of the day.
+            Requires eval_size to be multiple of 24.
+        """
         self.load_project_data()
         satFile_pattern = fh.get_filename_pattern(
             self.params["sat_file_structure"], self.params["timestamp_length"]
@@ -52,7 +70,28 @@ class evaluator(cloud_project.cloud_project):
 
         self.param_handler.save_filelists(self.project_path)
 
+    def copy_evaluation_split(self, source_project):
+        """
+        Copies the distribution into training and evaluation sets from another project.
+
+        Parameters
+        ----------
+        source_project : str
+            Path to project from which the data is copied.
+        """
+        labels_tmp = self.filelists["label_files"]
+        self.param_handler.load_filelists(source_project)
+        self.filelists[
+            "label_files"
+        ] = labels_tmp  # don't copy project specific labels safe space
+        self.param_handler.save_filelists(self.project_path)
+        print("Filelist copied from " + source_project)
+
     def create_evaluation_data(self):
+        """
+        Trains a classifier according to the project parameters and predicts labels for all
+        files in the evaluation set.
+        """
         self.cloud_class.load_project(self.project_path)
         print("Trainig evaluation classifier")
         self.cloud_class.run_training_pipeline(create_filelist=False)
@@ -70,6 +109,31 @@ class evaluator(cloud_project.cloud_project):
         show=True,
         verbose=True,
     ):
+        """
+        Creates evaluation plots for all the predicted data. The data can be plotted in
+        comparison to the ground truth or other classifiers predictions. Plots are saved
+        in the project folder.
+
+        Parameters
+        ----------
+        correlation : bool, optional
+            If True, Coocurrence Matrices of the predicted data and the ground truth will be plotted.
+        probabilities : bool, optional
+            If True, plots containing certainity of prediciton as subplot will be created.
+        comparison : bool, optional
+            If True, comparisons with other classifiers will be plotted.
+            Requires cmp_targets to contain other classifier projects.
+        overallCorrelation : bool, optional
+            If True, overall Coocurrence Matrix over all evaluation sets will be calculated an plotted.
+        cmp_targets : list, optional
+            List of filepaths of cloud classifier projects for comparison plots.
+        plot_titles : list, optional
+            List of strings with Titles of the subplots.
+        show : bool, optional
+            If True plot will be displayed in additon to be saved in the project folder
+        verbose : bool, optional
+            Description
+        """
         self.plotter.load_project(self.project_path)
         self.load_project_data()
 
@@ -78,7 +142,7 @@ class evaluator(cloud_project.cloud_project):
             truth_file = self.filelists["evaluation_sets"][i][1]
             timestamp = self.filelists["eval_timestamps"][i]
             if correlation:
-                self.save_coorMatrix(
+                self.__save_coorMatrix(
                     label_file=label_file,
                     truth_file=truth_file,
                     timestamp=timestamp,
@@ -86,7 +150,7 @@ class evaluator(cloud_project.cloud_project):
                     show=show,
                 )
             if comparison:
-                self.save_comparePlot(
+                self.__save_comparePlot(
                     label_file=label_file,
                     truth_file=truth_file,
                     timestamp=timestamp,
@@ -98,7 +162,7 @@ class evaluator(cloud_project.cloud_project):
             if probabilities:
                 if not plot_titles:
                     plot_titles = ["Probability Score", "Prediction"]
-                self.save_probasPlot(
+                self.__save_probasPlot(
                     label_file=label_file,
                     truth_file=truth_file,
                     timestamp=timestamp,
@@ -107,9 +171,9 @@ class evaluator(cloud_project.cloud_project):
                     show=show,
                 )
         if overallCorrelation:
-            self.get_overallCoocurrence(show=show)
+            self.__get_overallCoocurrence(show=show)
 
-    def save_comparePlot(
+    def __save_comparePlot(
         self,
         label_file,
         truth_file,
@@ -144,7 +208,7 @@ class evaluator(cloud_project.cloud_project):
         if verbose:
             print("Comparison Plot saved as " + filename)
 
-    def save_probasPlot(
+    def __save_probasPlot(
         self,
         label_file,
         truth_file,
@@ -174,7 +238,7 @@ class evaluator(cloud_project.cloud_project):
         if verbose:
             print("Probability Plot saved as " + filename)
 
-    def save_coorMatrix(
+    def __save_coorMatrix(
         self,
         label_file=None,
         truth_file=None,
@@ -214,7 +278,7 @@ class evaluator(cloud_project.cloud_project):
         if verbose:
             print("Correlation Matrix saved as", filename)
 
-    def get_overallCoocurrence(self, show=False):
+    def __get_overallCoocurrence(self, show=False):
         all_labels, all_truth = [], []
         for i in range(len(self.filelists["label_files"])):
             label_file = self.filelists["label_files"][i]
@@ -227,7 +291,7 @@ class evaluator(cloud_project.cloud_project):
             )
         all_labels, all_truth = fh.clean_eval_data(all_labels, all_truth)
 
-        self.save_coorMatrix(
+        self.__save_coorMatrix(
             label_data=all_labels,
             truth_data=all_truth,
             filename="Overall_CoocurrenceMatrix.png",
