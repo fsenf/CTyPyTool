@@ -117,11 +117,11 @@ class cloud_classifier(cloud_project.cloud_project):
             # when classifier is Forest, get vote share for each type
             if self.params["classifier_type"] == "Forest":
                 li = self.__trainer.classifier.classes_
-                probas = self.__trainer.get_forest_proabilties(vectors, self.params)
+                probas = self.__trainer.get_forest_proabilties(vectors)
                 labels = [li[i] for i in np.argmax(probas, axis=1)]
             # else get only labels
             else:
-                labels = self.__trainer.predict_labels(vectors, self.params)
+                labels = self.__trainer.predict_labels(vectors)
 
             filename = self.__write_labels(
                 labels, indices, file, probas, verbose=verbose
