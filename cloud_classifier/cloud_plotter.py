@@ -249,7 +249,9 @@ class cloud_plotter(cloud_project.cloud_project):
 
             return out_data, x, y
 
-    def plot_coocurrence_matrix(self, label_file, truth_file, normalize=True):
+    def plot_coocurrence_matrix(
+        self, label_file, truth_file, normalize=True, show=True
+    ):
         label_data = self.get_plotable_data(
             data_file=label_file, reduce_to_mask=True, get_coords=False
         )
