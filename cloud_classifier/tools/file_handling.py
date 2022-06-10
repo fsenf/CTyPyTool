@@ -5,17 +5,20 @@ import re
 
 
 def create_subfolders(path, contains_filename=True):
-
     if contains_filename:
-        path = os.path.split(path)[0]  # remove file nominator
-    folders = path.split(os.sep)  # split path along os specific seperators
+        path = os.path.split(path)[0]  # remove file from path
     current_path = None
+    if path.startswith("/"):
+        current_path = "/"
+
+    folders = path.split(os.sep)  # split path along os specific seperators
     for fol in folders:
-        if current_path is None:
+        if not current_path:
             current_path = fol
         else:
             current_path = os.path.join(current_path, fol)
-        if not os.path.exists(current_path):
+
+        if not os.path.isdir(current_path):
             os.mkdir(current_path)
 
 
@@ -46,7 +49,7 @@ def get_timestamp(reference_file, structure, ts_length):
 
 
 def generate_filelist_from_folder(
-    folder, satFile_pattern, labFile_pattern, only_sataData=False
+    folder, satFile_pattern, labFile_pattern, only_satData=False
 ):
     """
     Extracts trainig files from folder
@@ -57,7 +60,7 @@ def generate_filelist_from_folder(
     folder : string
         Path to the folder containig the data files. +
         Default is True. If True, files will be read additive, if False old filelists will be overwritten.
-    only_sataData : bool
+    only_satData : bool
         Default is False. If False, filelist will contain sat data and labels, if True only sat_data files.
     """
 
@@ -68,7 +71,7 @@ def generate_filelist_from_folder(
     sat_files, lab_files = {}, {}
     files = os.listdir(folder)
 
-    if only_sataData:
+    if only_satData:
         # return onky satelite date
         for file in files:
             sat_id = satFile_pattern.match(file)
@@ -94,7 +97,7 @@ def generate_filelist_from_folder(
         return training_sets
 
 
-def split_sets(dataset, satFile_pattern, eval_size=24, timesensitive=True):
+def split_sets(dataset, satFile_pattern, eval_size, timesensitive=True):
     """
     splits a set of data into an training and an evaluation set
     """
@@ -122,6 +125,7 @@ def split_sets(dataset, satFile_pattern, eval_size=24, timesensitive=True):
     training_indeces = [i for i in range(len(dataset)) if i not in eval_indeces]
     eval_set = [dataset[i] for i in eval_indeces]
     training_set = [dataset[i] for i in training_indeces]
+    timestamps = [timestamps[i] for i in eval_indeces]
 
     return training_set, eval_set, timestamps
 

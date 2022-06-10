@@ -213,7 +213,6 @@ class cloud_plotter(cloud_project.cloud_project):
 
         elif input_data is None:
             input_data = xr.open_dataset(data_file)
-
         if mode == "label":
             data = input_data[self.params["cloudtype_channel"]][0]
         elif mode == "proba":
@@ -250,11 +249,15 @@ class cloud_plotter(cloud_project.cloud_project):
 
             return out_data, x, y
 
-    def plot_coocurrence_matrix(self, label_file, truth_file, normalize=True):
+    def plot_coocurrence_matrix(
+        self, label_file, truth_file, normalize=True, show=True
+    ):
         label_data = self.get_plotable_data(
             data_file=label_file, reduce_to_mask=True, get_coords=False
         )
         truth_data = self.get_plotable_data(
             data_file=truth_file, reduce_to_mask=True, get_coords=False
         )
-        conf.plot_coocurrence_matrix(label_data, truth_data, normalize=normalize)
+        conf.plot_coocurrence_matrix(
+            label_data, truth_data, normalize=normalize, show=show
+        )
