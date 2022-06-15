@@ -23,10 +23,17 @@ importlib.reload(conf)
 
 
 class cloud_classifier(cloud_project.cloud_project):
+
+    """
+    Cloud classifier class building on cloud_project class. Main class of the cloud classifier framework.
+    Contains function that implement complete training and prediction procedures.
+
+    """
+
     def __init__(self, project_path=None):
 
         super().__init__(project_path)
-        self.trainer = cloud_trainer.cloud_trainer()
+        self.__trainer = cloud_trainer.cloud_trainer()
 
     ######################    PIPELINE  ######################################
     ##########################################################################
@@ -37,9 +44,24 @@ class cloud_classifier(cloud_project.cloud_project):
         create_filelist=True,
         create_training_data=True,
     ):
+        """
+        Training pipeline that creates training data and trains a classifier according to
+        the project parameters.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            If True, the function will give detailed command line output.
+        create_filelist : bool, optional
+            If True, a filelist will be created from the folder specified in the project settings.
+            If False, the fielelist will be used as present in the project folder.
+        create_training_data : bool, optional
+            If True, training data will be created according to the project settings.
+            If False, the training data will be used as present in the project folder.
+        """
         self.load_project_data()
         if create_filelist:
-            self.create_training_filelist(verbose=verbose)
+            self.__create_training_filelist(verbose=verbose)
 
         ncdf.create_reference_file(
             self.project_path,
@@ -47,23 +69,35 @@ class cloud_classifier(cloud_project.cloud_project):
             self.params["cloudtype_channel"],
         )
 
-        self.apply_mask(verbose=verbose)
+        self.__apply_mask(verbose=verbose)
 
         if create_training_data:
-            vectors, labels = self.create_training_data(verbose=verbose)
+            vectors, labels = self.__create_training_data(verbose=verbose)
         else:
-            vectors, labels = self.load_training_set()
+            vectors, labels = self.__load_training_set()
 
-        self.trainer.train_classifier(vectors, labels, self.params, verbose)
-        self.trainer.save_classifier(self.project_path, verbose)
+        self.__trainer.train_classifier(vectors, labels, self.params, verbose)
+        self.__trainer.save_classifier(self.project_path, verbose)
 
     def run_prediction_pipeline(self, verbose=True, create_filelist=True):
+        """
+        Prediction pipeline that creates predicted labels using a previously trained classifier according
+        to the project parameters.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            If True, the function will give detailed command line output.
+        create_filelist : bool, optional
+            If True, a filelist will be created from the folder specified in the project settings.
+            If False, the fielelist will be used as present in the project folder.
+        """
         self.load_project_data()
         if create_filelist:
-            self.extract_input_filelist(verbose=verbose)
+            self.__extract_input_filelist(verbose=verbose)
 
-        self.trainer.load_classifier(self.project_path, verbose=verbose)
-        self.apply_mask(verbose=verbose)
+        self.__trainer.load_classifier(self.project_path, verbose=verbose)
+        self.__apply_mask(verbose=verbose)
 
         ncdf.create_reference_file(
             self.project_path,
@@ -82,14 +116,16 @@ class cloud_classifier(cloud_project.cloud_project):
             probas = None
             # when classifier is Forest, get vote share for each type
             if self.params["classifier_type"] == "Forest":
-                li = self.trainer.classifier.classes_
-                probas = self.trainer.get_forest_proabilties(vectors, self.params)
+                li = self.__trainer.classifier.classes_
+                probas = self.__trainer.get_forest_proabilties(vectors)
                 labels = [li[i] for i in np.argmax(probas, axis=1)]
             # else get only labels
             else:
-                labels = self.trainer.predict_labels(vectors, self.params)
+                labels = self.__trainer.predict_labels(vectors)
 
-            filename = self.write_labels(labels, indices, file, probas, verbose=verbose)
+            filename = self.__write_labels(
+                labels, indices, file, probas, verbose=verbose
+            )
             label_files.append(filename)
         self.param_handler.set_filelists(label_files=label_files)
         self.param_handler.save_filelists(self.project_path)
@@ -97,7 +133,7 @@ class cloud_classifier(cloud_project.cloud_project):
     #############           Steps of the pipeline         ######################
     ##########################################################################
 
-    def create_training_filelist(self, verbose=True):
+    def __create_training_filelist(self, verbose=True):
 
         satFile_pattern = fh.get_filename_pattern(
             self.params["sat_file_structure"], self.params["timestamp_length"]
@@ -114,12 +150,12 @@ class cloud_classifier(cloud_project.cloud_project):
         if verbose:
             print("Filelist created!")
 
-    def apply_mask(self, verbose=True):
+    def __apply_mask(self, verbose=True):
         self.masked_indices = dh.set_indices_from_mask(self.params)
         if verbose:
             print("Masked indices set!")
 
-    def create_training_data(self, verbose=True):
+    def __create_training_data(self, verbose=True):
         vectors, labels = dh.create_training_vectors(
             self.params,
             self.filelists["training_sets"],
@@ -131,19 +167,13 @@ class cloud_classifier(cloud_project.cloud_project):
             print("Training data created!")
         return vectors, labels
 
-    def load_training_set(self, verbose=True):
+    def __load_training_set(self, verbose=True):
         vectors, labels = dh.load_training_data(self.project_path)
         if verbose:
             print("Training data loaded!")
         return vectors, labels
 
-    def train_classifier(self, vectors, labels, verbose=True):
-        self.trainer.train_classifier(vectors, labels, self.params)
-        self.trainer.save_classifier(self.project_path)
-        if verbose:
-            print("Classifier created!")
-
-    def extract_input_filelist(self, verbose=True):
+    def __extract_input_filelist(self, verbose=True):
         satFile_pattern = fh.get_filename_pattern(
             self.params["sat_file_structure"], self.params["timestamp_length"]
         )
@@ -164,7 +194,7 @@ class cloud_classifier(cloud_project.cloud_project):
         if verbose:
             print("Input filelist created!")
 
-    def write_labels(self, labels, indices, sat_file, probas=None, verbose=True):
+    def __write_labels(self, labels, indices, sat_file, probas=None, verbose=True):
         name = fh.get_label_name(
             sat_file=sat_file,
             sat_file_structure=self.params["sat_file_structure"],
