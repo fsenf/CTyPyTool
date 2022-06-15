@@ -1,0 +1,11 @@
+classifiers/
+*__pycache*
+data/
+env/
+*ipynb_checkpoints/
+notebooks/test*.ipynb
+*sublime-workspace
+*sublime-project
+dev_notebooks/
+*.pre-commit-config.yaml
+TODOs

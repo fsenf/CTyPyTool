@@ -10,7 +10,7 @@ This description is developed for the application of our cloud classification to
     ![](images/Running_Notebooks_on_DKRZ_JupyterHub-00.png)
 
 * Second, you select a preset. I like the 5 GB, prepost setting.
-    
+
     ![](images/Running_Notebooks_on_DKRZ_JupyterHub-01.png)
 
 * Third, you open a terminal in your JuypterHub session (alternatively, you could login via `ssh` and use the ssh-terminal session)
@@ -35,10 +35,10 @@ This description is developed for the application of our cloud classification to
     remote: Total 587 (delta 296), reused 581 (delta 294), pack-reused 0
     Receiving objects: 100% (587/587), 12.80 MiB | 19.00 MiB/s, done.
     Resolving deltas: 100% (296/296), done.
-    ``` 
+    ```
     Perfect! The source is there!
 
-<!---    
+<!---
 * **Temporary Step-Back as Bugfix**: The considered Notebooks run with a certain version of the software. We step back to this version. For newer version, bugfixes need to be implemented first.
 
     ```
@@ -64,12 +64,12 @@ This description is developed for the application of our cloud classification to
 
         [requires]
         python_version = "3.8"
-        ``` 
-        
+        ```
+
         Both might be part of the standard anaconda env. We ignore the dependencies, here. You might need to install the packages an other platforms.
 
         The list of dependencies also looks a bit incomplete (TODO: check all loaded modules!)
-       
+
 
 ## Application 1: Run Example Cases with a Pretrained Tree Classifier
 
@@ -90,7 +90,7 @@ This description is developed for the application of our cloud classification to
     ```
 
     The `*zip` Files contain pretrained classifiers. The `index.html?show_all` also comes along but is not needed.
-    
+
 * let us extract the tree classifier
 
     ```
@@ -98,24 +98,24 @@ This description is developed for the application of our cloud classification to
     Archive:  TreeClassifier.zip
        creating: ../classifiers/TreeClassifier/
        creating: ../classifiers/TreeClassifier/data/
-      inflating: ../classifiers/TreeClassifier/data/classifier  
-      inflating: ../classifiers/TreeClassifier/data/label_reference.nc  
-      inflating: ../classifiers/TreeClassifier/data/training_data  
+      inflating: ../classifiers/TreeClassifier/data/classifier
+      inflating: ../classifiers/TreeClassifier/data/label_reference.nc
+      inflating: ../classifiers/TreeClassifier/data/training_data
        creating: ../classifiers/TreeClassifier/filelists/
-      inflating: ../classifiers/TreeClassifier/filelists/evaluation_sets.json  
-      inflating: ../classifiers/TreeClassifier/filelists/input_files.json  
-      inflating: ../classifiers/TreeClassifier/filelists/label_files.json  
-      inflating: ../classifiers/TreeClassifier/filelists/training_sets.json  
+      inflating: ../classifiers/TreeClassifier/filelists/evaluation_sets.json
+      inflating: ../classifiers/TreeClassifier/filelists/input_files.json
+      inflating: ../classifiers/TreeClassifier/filelists/label_files.json
+      inflating: ../classifiers/TreeClassifier/filelists/training_sets.json
        creating: ../classifiers/TreeClassifier/labels/
-      inflating: ../classifiers/TreeClassifier/labels/nwcsaf_msevi-medi-20190317_1800_predicted.nc  
-      inflating: ../classifiers/TreeClassifier/labels/nwcsaf_msevi-medi-20190318_1100_predicted.nc  
+      inflating: ../classifiers/TreeClassifier/labels/nwcsaf_msevi-medi-20190317_1800_predicted.nc
+      inflating: ../classifiers/TreeClassifier/labels/nwcsaf_msevi-medi-20190318_1100_predicted.nc
        creating: ../classifiers/TreeClassifier/settings/
-      inflating: ../classifiers/TreeClassifier/settings/config.json  
-      inflating: ../classifiers/TreeClassifier/settings/data_structure.json  
-    ``` 
-    
+      inflating: ../classifiers/TreeClassifier/settings/config.json
+      inflating: ../classifiers/TreeClassifier/settings/data_structure.json
+    ```
+
     Nice!
-    
+
 * Get NWCSAF & Meteosat Data & Georef for Running the Examples
     * Extract the data:
         ```
@@ -123,18 +123,18 @@ This description is developed for the application of our cloud classification to
         Archive:  data.zip
            creating: ../data/
            creating: ../data/auxilary_files/
-          inflating: ../data/auxilary_files/lsm_mask_medi.nc  
-          inflating: ../data/auxilary_files/msevi-medi-georef.nc  
-          inflating: ../data/auxilary_files/msevi_georef.nc  
+          inflating: ../data/auxilary_files/lsm_mask_medi.nc
+          inflating: ../data/auxilary_files/msevi-medi-georef.nc
+          inflating: ../data/auxilary_files/msevi_georef.nc
            creating: ../data/example_data/
-          inflating: ../data/example_data/msevi-medi-20190317_1800.nc  
-          inflating: ../data/example_data/msevi-medi-20190318_1100.nc  
-          inflating: ../data/example_data/nwcsaf_msevi-medi-20190317_1800.nc  
-          inflating: ../data/example_data/nwcsaf_msevi-medi-20190318_1100.nc  
+          inflating: ../data/example_data/msevi-medi-20190317_1800.nc
+          inflating: ../data/example_data/msevi-medi-20190318_1100.nc
+          inflating: ../data/example_data/nwcsaf_msevi-medi-20190317_1800.nc
+          inflating: ../data/example_data/nwcsaf_msevi-medi-20190318_1100.nc
         ```
-       
-     * On the content:   
-        ``` 
+
+     * On the content:
+        ```
         > cd ../data
         > tree
         .
@@ -147,12 +147,12 @@ This description is developed for the application of our cloud classification to
             |-- msevi-medi-20190318_1100.nc
             |-- nwcsaf_msevi-medi-20190317_1800.nc
             `-- nwcsaf_msevi-medi-20190318_1100.nc
-        
+
         2 directories, 7 files
         ```
 
         OK, the downloaded data contains a land-sea mask and a georeference in `auxilary_files/` plus two Meteosat and NWCSAF cloud typing files for the Mediterranean region in `example_data/`.
- 
+
 ### Run The Tests on JupyterHub
 
 For the application 1 we will work with the notebook `Application_of_a_pretrained_classifier.ipynb` which shows how a pre-trained classifier is loaded and applied to example data.
@@ -173,8 +173,8 @@ Go through the following steps:
 
 ### Get the Forest Classifier Data
 
-We assume that executed all steps mentioned above and that you 
-* already downloaded the forest classifier 
+We assume that executed all steps mentioned above and that you
+* already downloaded the forest classifier
 * like to apply the forest classifier on the same example data
 * and now went back to your `download` directory with the content:
 ```
@@ -189,24 +189,24 @@ We assume that executed all steps mentioned above and that you
 
 * For extracting the Forest Classifier, run:
     ```
-    > unzip -d ../classifiers ForestClassifier.zip 
+    > unzip -d ../classifiers ForestClassifier.zip
     Archive:  ForestClassifier.zip
        creating: ../classifiers/ForestClassifier/
        creating: ../classifiers/ForestClassifier/data/
-      inflating: ../classifiers/ForestClassifier/data/classifier  
-      inflating: ../classifiers/ForestClassifier/data/label_reference.nc  
-      inflating: ../classifiers/ForestClassifier/data/training_data  
+      inflating: ../classifiers/ForestClassifier/data/classifier
+      inflating: ../classifiers/ForestClassifier/data/label_reference.nc
+      inflating: ../classifiers/ForestClassifier/data/training_data
        creating: ../classifiers/ForestClassifier/filelists/
-      inflating: ../classifiers/ForestClassifier/filelists/evaluation_sets.json  
-      inflating: ../classifiers/ForestClassifier/filelists/input_files.json  
-      inflating: ../classifiers/ForestClassifier/filelists/label_files.json  
-      inflating: ../classifiers/ForestClassifier/filelists/training_sets.json  
+      inflating: ../classifiers/ForestClassifier/filelists/evaluation_sets.json
+      inflating: ../classifiers/ForestClassifier/filelists/input_files.json
+      inflating: ../classifiers/ForestClassifier/filelists/label_files.json
+      inflating: ../classifiers/ForestClassifier/filelists/training_sets.json
        creating: ../classifiers/ForestClassifier/labels/
-      inflating: ../classifiers/ForestClassifier/labels/nwcsaf_msevi-medi-20190317_1800_predicted.nc  
-      inflating: ../classifiers/ForestClassifier/labels/nwcsaf_msevi-medi-20190318_1100_predicted.nc  
+      inflating: ../classifiers/ForestClassifier/labels/nwcsaf_msevi-medi-20190317_1800_predicted.nc
+      inflating: ../classifiers/ForestClassifier/labels/nwcsaf_msevi-medi-20190318_1100_predicted.nc
        creating: ../classifiers/ForestClassifier/settings/
-      inflating: ../classifiers/ForestClassifier/settings/config.json  
-      inflating: ../classifiers/ForestClassifier/settings/data_structure.json  
+      inflating: ../classifiers/ForestClassifier/settings/config.json
+      inflating: ../classifiers/ForestClassifier/settings/data_structure.json
     ```
 
 * Prepations on JupyterHub:
@@ -217,10 +217,10 @@ We assume that executed all steps mentioned above and that you
     * Rename the notebook e.g. to "Test_the_Forest_Classifier_Example" - click on the title on the top row, just right to the DKRZ logo
 
 * Testing the forest classifier notebook:
-    
+
     * apply the following modifications:
-        1. Replace line in "In [3]:" 
-        
+        1. Replace line in "In [3]:"
+
         from
         ```python
         path = "../classifiers/TreeClassifier"
@@ -231,13 +231,13 @@ We assume that executed all steps mentioned above and that you
         ```
 
         2. Replace line in "In [9]:"
-        
+
         from
         ```
-        ls ../classifiers/TreeClassifier/labels 
+        ls ../classifiers/TreeClassifier/labels
         ```
-    
-        to 
+
+        to
         ```
         ls ../classifiers/ForestClassifier/labels
         ```
@@ -247,7 +247,7 @@ We assume that executed all steps mentioned above and that you
 This takes slightly longer. I might change the descriptive text in markdown for your own reference.
 
 
-## Application 3: Examples for Plotting Classifier Labels  
+## Application 3: Examples for Plotting Classifier Labels
 
 Plotting of labels and some rudimetary statistics is performed in the notebook `Plotting_of_example_data.ipynb`
 

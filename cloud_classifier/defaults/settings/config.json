@@ -1,9 +1,8 @@
-{    
+{
     "classifier_type": "Forest",
     "max_depth": 35,
     "ccp_alpha": 0,
     "n_estimators": 100,
-    "feature_preselection": false,
     "max_features": null,
     "min_samples_split" : 2,
     "merge_list" : [],

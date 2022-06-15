@@ -1,227 +1,154 @@
-import numpy as np
 from joblib import dump, load
 
-from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import SelectKBest
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-
-import base_class
-
-
-from base_class import base_class
+import os
 
 
-class cloud_trainer(base_class):
-    """
-    Trainable Classifier for cloud classifier_type prediction from satelite data.
-
-
-
-    Methods
-    -------
+class cloud_trainer:
 
     """
+    Cloud trainer class that facilitates the training of a classifier with previously
+    extracted training data as well as the predicting of labels from satelite data.
 
+    Attributes
+    ----------
+    classifier :
+        Classifier that is trained by the cloud_trainer.
+    """
 
-    def __init__(self, **kwargs):
-        class_variables =  {
-            'classifier_type', 
-            'max_depth',
-            'ccp_alpha',
-            'n_estimators',
-            'feature_preselection',
-            'max_features',
-            'min_samples_split',
-            'refinment_classifier_type'
-            }
-        
-        self.classifier = None      
-
-        super().init_class_variables(class_variables)
-        super().__init__( **kwargs)
-   
-
-
-
-    def fit_feature_selection(self, training_vectors, training_labels, k = 20):
-        self.feat_select = SelectKBest(k=k).fit(training_vectors, training_labels)
-
-
-
-    def apply_feature_selection(self, vectors):
-        if(self.feat_select is None):
-            print("No feature selection fitted")
-            return
-        return self.feat_select.transform(vectors)
-
-
-
-    def train_classifier(self, training_vectors, training_labels, refined = False):
+    def train_classifier(self, vectors, labels, params, verbose=True):
         """
-        Trains the classifier using previously created training_vectors
-        
+        Trains the classifier using previously created vectors
+
         Parameters
         ----------
-        m_depth : int
-            Maximal depth of the decision tree
+        vectors : numpy array
+            Array of trainig vectors extracted from satelite data.
+        labels : numpy array
+            Array of labels corrosponding to the training vectors
+        params : dicitonary
+            Description
+        verbose : bool, optional
+            If True, the function will give detailed command line output.
         """
-        # if(refined):
-        #     print("Training Forest Classifier")
-        #     self.classifier = RandomForestClassifier(n_estimators = self.n_estimators, max_depth = self.max_depth, 
-        #                                          ccp_alpha = self.ccp_alpha, min_samples_split = self.min_samples_split,
-        #                                          max_features = self.max_features)
 
-        # if(refined):
-        #     print("Training Tree Classifier")
-        #     self.classifier = tree.DecisionTreeClassifier(max_depth = self.max_depth, ccp_alpha = self.ccp_alpha)
-       
+        classifier_type = params["classifier_type"]
 
-        if(training_vectors is None or training_labels is None):
-            raise ValueError("Missing Training data")
-            return
-
-
-        classifier_type = self.classifier_type
-        if(refined):
-            classifier_type = self.refinment_classifier_type
-
-
-        if(classifier_type == "Tree"):
+        if classifier_type == "Tree":
             print("Training Tree Classifier")
-            self.classifier = tree.DecisionTreeClassifier(max_depth = self.max_depth, ccp_alpha = self.ccp_alpha)
-        elif(classifier_type == "Forest"): 
+            self.classifier = make_pipeline(
+                StandardScaler(),
+                DecisionTreeClassifier(
+                    max_depth=params["max_depth"], ccp_alpha=params["ccp_alpha"]
+                ),
+            )
+        elif classifier_type == "Forest":
             print("Training Forest Classifier")
-            self.classifier = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators = self.n_estimators, max_depth = self.max_depth, 
-                                                 ccp_alpha = self.ccp_alpha, min_samples_split = self.min_samples_split,
-                                                 max_features = self.max_features))
-        elif(classifier_type == "SVM"): 
+            self.classifier = make_pipeline(
+                StandardScaler(),
+                RandomForestClassifier(
+                    n_estimators=params["n_estimators"],
+                    max_depth=params["max_depth"],
+                    ccp_alpha=params["ccp_alpha"],
+                    min_samples_split=params["min_samples_split"],
+                    max_features=params["max_features"],
+                ),
+            )
+        elif classifier_type == "SVM":
             print("Training SVM")
-            self.classifier = make_pipeline(StandardScaler(), SVC(gamma='auto'))
-        
+            self.classifier = make_pipeline(StandardScaler(), SVC(gamma="auto"))
+
         else:
             raise ValueError("Classifier type not valid")
 
-
-        if(self.feature_preselection and not (self.feat_select is None)):
-            training_vectors = self.apply_feature_selection(training_vectors)
-        self.classifier.fit(training_vectors, training_labels)
-
-
+        self.classifier.fit(vectors, labels)
+        if verbose:
+            print("Classifier trained!")
 
     def predict_labels(self, vectors):
         """
-        Predicts the labels if a corresponding set of input vectors has been created.
-        """
-        if(self.classifier is None):
-            print("No classifer trained or loaded")
-            return
+        Predicts the labels from a corresponding set of input vectors.
 
-        if(self.feature_preselection and not (self.feat_select is None)):
-            vectors = self.apply_feature_selection(vectors)
-
-        return self.classifier.predict(vectors)
-
-
-
-    def get_forest_proabilties(self, vectors):
-        if(self.classifier is None):
-            print("No classifer trained or loaded")
-            return
-
-        if(self.feature_preselection and not (self.feat_select is None)):
-            vectors = self.apply_feature_selection(vectors)
-
-        return self.classifier.predict_proba(vectors)
-
-
-
-
-
-    def evaluate_parameters(self, vectors, labels, verbose = True):
-        """
-        Evaluates the given parameters over a set of training vectors
-
-        Training vectors are split into test and trainig set
-        """
-
-        # save a possible already trained classifier
-        tmp = self.classifier
-        train_v, test_v, train_l, test_l = train_test_split(vectors, labels, random_state=0)
-
-        self.train_classifier(train_v, train_l)
-
-        pred_l = self.predict_labels(test_v)
-
-        correct = np.sum(pred_l == test_l)
-        total = len(pred_l)
-        #restore classifier
-        self.classifier = tmp
-        if(verbose):
-            print("Correctly identified %i out of %i labels! \nPositve rate is: %f" % (correct, total, correct/total))
-        return(correct/total)
-        
-
-        
-    def evaluate_classifier(self, vectors, labels):
-        """
-        Evaluates an already trained classifier with a new set of data and labels
-        
         Parameters
         ----------
-        filename_data : string
-            Filename of the sattelit data set
+        vectors : numpy array
+            Array of input vectors.
 
-        filename_labels : string
-            The data of the corresponding labels, if given  
-
-        hour : int
-            0-23, hour of the day at wh the data sets are read
+        Returns
+        -------
+        numpy array
+            Array of predicted labels
         """
-        if(self.classifier is None):
-            print("No classifer trained or loaded")
-            return
-        predicted_labels = self.predict_labels(vectors)
+        if self.classifier is None:
+            raise Exception("No classifer trained or loaded")
+        return self.classifier.predict(vectors)
 
-        correct = np.sum(predicted_labels == labels)
-        total = len(labels)
-        
-        print("Correctly identified %i out of %i labels! \nPositve rate is: %f" % (correct, total, correct/total))
-        return(correct/total)
+    def get_forest_proabilties(self, vectors):
+        """
+        Predicts the proabilities of class memebership for all target classes.
+        Only applicable if classifier is of Random Forest type
 
+        Parameters
+        ----------
+        vectors : numpy array
+            Array of input vectors.
 
+        Returns
+        -------
+        numpy array
+            Array of predicted probability values.
+        """
+        if self.classifier is None:
+            raise Exception("No classifer trained or loaded")
+        return self.classifier.predict_proba(vectors)
 
-
-
-
-
-
-    ##################################################################################
-    #################         Saving and Loading classifier
-    ##################################################################################
-
-
-    def save_classifier(self, filename):
+    def save_classifier(self, project_path, verbose=True):
         """
         Saves Classifier
 
         Parameters
         ----------
-        filename : string
-            Name of the file into wh the classifier is saved.
+        project_path : string
+            Path of the project folder.
+        verbose : bool, optional
+            If True, the function will give detailed command line output.
         """
+        filename = os.path.join(project_path, "data", "classifier")
         dump(self.classifier, filename)
+        if verbose:
+            print("Classifier saved!")
 
-
-    def load_classifier(self, filename):
+    def load_classifier(self, project_path, verbose=True):
         """
-        Loads classifer        
+        Loads classifer from project folder.
+
         Parameters
         ----------
-        filename : string
-            Name if the file the classifier is loaded from.
+        project_path : string
+            Path of the project folder.
+        verbose : bool, optional
+            If True, the function will give detailed command line output.
+
         """
+        filename = os.path.join(project_path, "data", "classifier")
         self.classifier = load(filename)
+        if verbose:
+            print("Classifier loaded!")
+
+
+"""
+    def fit_feature_selection(self, vectors, labels, k=20):
+        self.feat_select = SelectKBest(k=k).fit(vectors, labels)
+
+
+    def apply_feature_selection(self, vectors):
+        if self.feat_select is None:
+            print("No feature selection fitted")
+            return
+        return self.feat_select.transform(vectors)
+"""
