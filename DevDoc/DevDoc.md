@@ -1,17 +1,21 @@
 # Cloud Typing Tool
 
-This Project aims to provide a number of tools that allow the application of machine learning frameworks for  cloud type determination from satelite data. It facilitates the extraction and preparation of data from NETCDF files containing satelite data, the training of classifiers on that data
+This Project aims to provide a number of tools that allow the application of machine learning frameworks for  cloud type determination from satellite data. It facilitates the extraction and preparation of data from NETCDF files containing satellite data, the training of classifiers on that data and 
 
 
 
 
 ## Architecture
 
+
+
 ![](final_hd.png)
 
 
 ## Project Parameters
 
+A number of project parameters determine the way data is extracted from NETCDF files as well as how a classifier is trained. When a new cloud classifier project is created, setting files are created in the project folder and initialized with default values. 
+Listed below are all project settings currently used by the tool, their default values, and a short explanation about their usage.
 
 ### From 'config.json'
 
@@ -19,7 +23,7 @@ This Project aims to provide a number of tools that allow the application of mac
 
    **"max_depth":** *35*     &rarr; Maximal depth of Decision Tree or Trees in Random Forest.
 
-   **"ccp_alpha":** *0*    &rarr; Complexity parameter used for Minimal Cost-Complexity Pruning. The subtree with the largest cost complexity that is smaller than ccp_alpha will be chosen. By default, no pruning is performed.
+   **"ccp_alpha":** *0*    &rarr; Complexity parameter used for Minimal Cost-Complexity Pruning. The sub-tree with the largest cost complexity that is smaller than ccp_alpha will be chosen. By default, no pruning is performed.
 
    **"n_estimators":** *100*  &rarr; Number of Trees for the Random Forest Classifier.
 
@@ -27,7 +31,7 @@ This Project aims to provide a number of tools that allow the application of mac
 
    **"min_samples_split":** *2*  &rarr; The minimum number of samples required to split an internal node. 
 
-   **"merge_list":** *[]* &rarr; List of tuples of names of cloud types that are merged into one during training and predicition. I.e. [["very low", "low"], ["semi. mod. thick", "semi. thick"]] would  treat all clouds defined as "very low" as "low" and all clouds defined as "semi. mod. thick" as "semi. thick". Reduces complexity of problem space and can increase prediction performance at the cost acuity.
+   **"merge_list":** *[]* &rarr; List of tuples of names of cloud types that are merged into one during training and prediction. I.e. [["very low", "low"], ["semi. mod. thick", "semi. thick"]] would  treat all clouds defined as "very low" as "low" and all clouds defined as "semi. mod. thick" as "semi. thick". Reduces complexity of problem space and can increase prediction performance at the cost acuity.
 
    **"difference_vectors":** *true* &rarr; Determines if difference vectors are created from the original data points by pairwise subtraction of values. 
 
@@ -38,15 +42,15 @@ This Project aims to provide a number of tools that allow the application of mac
 
 ### From 'data_strucutre.json'
 
-   **"data_source_folder":** *"../data/full_dataset"* &rarr; Path to the folder containg the training data. 
+   **"data_source_folder":** *"../data/full_dataset"* &rarr; Path to the folder containing the training data. 
 
-   **"timestamp_length":** *13* &rarr; Lenght of the timestamp in the filenames of satelite and label data.
+   **"timestamp_length":** *13* &rarr; Length of the timestamp in the filenames of satellite and label data.
 
-   **"sat_file_structure":** * "msevi-medi-TIMESTAMP.nc" * &rarr; Name pattern of satelite data files.
+   **"sat_file_structure":** * "msevi-medi-TIMESTAMP.nc" * &rarr; Name pattern of satellite data files.
 
    **"label_file_structure":** *"nwcsaf_msevi-medi-TIMESTAMP.nc" * &rarr; Name pattern of label data files.
 
-   **"input_source_folder":** *"../data/example_data" * &rarr; Path to the folder containg the satelite data to use as input for label predicition. 
+   **"input_source_folder":** *"../data/example_data" * &rarr; Path to the folder containing the satellite data to use as input for label prediction. 
 
    **"georef_file":** *"../data/auxilary_files/msevi-medi-georef.nc" * &rarr; Path to georef file.
 
@@ -64,7 +68,7 @@ This Project aims to provide a number of tools that allow the application of mac
        "bt108",
        "bt120",
        "bt134"
-   ] * &rarr; Channels that are read from the satelite data to create data vectors.
+   ] * &rarr; Channels that are read from the satellite data to create data vectors.
 
    **"cloudtype_channel":** *"ct"* &rarr; Key for the cloud type channel in the label data.
 
