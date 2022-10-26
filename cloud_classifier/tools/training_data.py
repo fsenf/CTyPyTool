@@ -91,8 +91,12 @@ def extract_feature_vectors(data, indices, hour, input_channels):
 
     """
     vectors = []
+
     for channel in input_channels:
-        values = np.array(data[channel])[hour, indices[0], indices[1]].flatten()
+        
+        chan = data[channel].transpose( 'time', 'rows', 'cols' ).data
+        values = np.array(chan[hour, indices[0], indices[1]].flatten())
+        
         vectors.append(values)
 
     # reshape from "channels X n" to "n X channels"
