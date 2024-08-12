@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ctypytool"
+version = "v0.1"
+dependencies = [
+    "requests",
+    "numpy",
+    "netcdf4",
+    "h5netcdf",
+]
+
+requires-python = ">=3.8"
+authors = [
+  {name = "Fabian Senf", email = "senf@tropos.de"},
+  {name = "Sven Zimmermann"},
+]
+maintainers = [
+  {name = "Fabian Senf", email = "senf@tropos.de"},
+]
+description = "Cloud Typing Python Tool for Verification of Weather Forecasts"
+keywords = ["cloud", "weather", "forecast", "verification", "satellite", "classification"]
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Programming Language :: Python"
+]
+
+
+[project.urls]
+Homepage = "https://ctypytool.readthedocs.io"
+Documentation = "https://ctypytool.readthedocs.io"
+Repository = "https://github.com/fsenf/CTyPyTool"
+Issues = "https://github.com/fsenf/CTyPyTool/issues"
+
+
+[tool.setuptools]
+packages = ["ctypytool"]  # Replace with your actual package names
