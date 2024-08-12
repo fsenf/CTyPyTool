@@ -6,18 +6,13 @@ import matplotlib.pyplot as plt
 import cartopy
 import cartopy.crs as ccrs
 
-import tools.data_handling as dh
-import tools.training_data as td
-import tools.file_handling as fh
-import tools.nwcsaf_tools as nwc
-import tools.confusion as conf
+from .tools import data_handling as dh
+from .tools import training_data as td
+from .tools import file_handling as fh
+from .tools import nwcsaf_tools as nwc
+from .tools import confusion as conf
 
-import cloud_project
-
-
-import importlib
-
-importlib.reload(nwc)
+from . import cloud_project
 
 
 class cloud_plotter(cloud_project.cloud_project):

@@ -1,25 +1,15 @@
 import os
 import numpy as np
 
-import parameter_handler
-import cloud_trainer
+from . import cloud_project
+from . import cloud_trainer
 
-import tools.data_handling as dh
-import tools.file_handling as fh
-import tools.confusion as conf
-import tools.write_netcdf as ncdf
+from .tools import data_handling as dh
+from .tools import file_handling as fh
+from .tools import confusion as conf
+from .tools import write_netcdf as ncdf
 
-import cloud_project
 
-import importlib
-
-importlib.reload(cloud_trainer)
-importlib.reload(parameter_handler)
-
-importlib.reload(dh)
-importlib.reload(fh)
-importlib.reload(ncdf)
-importlib.reload(conf)
 
 
 class cloud_classifier(cloud_project.cloud_project):

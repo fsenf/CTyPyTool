@@ -1,14 +1,13 @@
-import cloud_project
-import parameter_handler
-import tools.file_handling as fh
-import cloud_classifier
-import cloud_plotter
 import os
-import tools.confusion as conf
 
-import importlib
+from . import cloud_project
+from . import parameter_handler
+from . import cloud_classifier
+from . import cloud_plotter
 
-importlib.reload(cloud_plotter)
+from .tools import confusion as conf
+from .tools import file_handling as fh
+
 
 
 class evaluator(cloud_project.cloud_project):

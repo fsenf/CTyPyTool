@@ -1,5 +1,6 @@
-import parameter_handler
 import os
+
+from . import parameter_handler
 
 
 class cloud_project:

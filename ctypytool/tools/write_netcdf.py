@@ -2,7 +2,8 @@ import xarray as xr
 import numpy as np
 import pathlib
 import os
-import tools.file_handling as fh
+
+from . import file_handling as fh
 
 
 def get_reference_filepath(project_path):

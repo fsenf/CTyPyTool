@@ -3,18 +3,16 @@ import xarray as xr
 import h5py
 import os
 from joblib import dump, load
-
-
-import tools.training_data as td
-import tools.file_handling as fh
-import tools.nwcsaf_tools as nwc
-
-#
 import importlib
 
-importlib.reload(td)
-importlib.reload(fh)
-importlib.reload(nwc)
+
+from . import training_data as td
+from . import file_handling as fh
+from . import nwcsaf_tools as nwc
+
+#
+
+
 
 
 def set_indices_from_mask(params):

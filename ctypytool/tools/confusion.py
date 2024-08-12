@@ -4,11 +4,12 @@ import itertools
 import pandas as pd
 import warnings
 
-import tools.nwcsaf_tools as nwc
-import tools.file_handling as fh
-from matplotlib.colors import LinearSegmentedColormap
 
+from matplotlib.colors import LinearSegmentedColormap
 from sklearn.metrics.cluster import *
+
+from . import nwcsaf_tools as nwc
+from . import file_handling as fh
 
 
 def plot_coocurrence_matrix(

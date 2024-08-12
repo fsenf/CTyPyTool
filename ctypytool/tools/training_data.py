@@ -2,7 +2,7 @@ import xarray as xr
 import random
 import numpy as np
 import time
-import tools.nwcsaf_tools as nwc
+from . import nwcsaf_tools as nwc
 
 
 """
