@@ -54,8 +54,9 @@ Your Contribution is very welcome! Yo could either contribute with:
 * reporting issues, missing features or bugs
 * improving code
 
-**4 Steps for source code developers**:
-1. fork the `devel` branch
-2. update source code / software parts in your fork
-3. check functionality with example notebooks
-4. make a pull request onto the `devel` branch in the "official" repository under https://github.com/fsenf/CTyPyTool
+**5 Steps for source code developers**:
+1. fork the repository with the `main` branch
+2. branch out into a `feature-<something>` branch in you own fork
+3. update source code / software parts in your fork
+4. check functionality with example notebooks
+5. make a pull request onto the `main` branch in the "official" repository under https://github.com/fsenf/CTyPyTool
