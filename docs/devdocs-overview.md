@@ -1,6 +1,20 @@
-# Cloud Typing Tool
+# Cloud Typing Tool: *CTyPyTool*
 
-This Project aims to provide a number of tools that allow the application of machine learning frameworks for  cloud type determination from satellite data. It facilitates the extraction and preparation of data from NETCDF files containing satellite data, the training of classifiers on that data and 
+## Mission Statement
+This project aims to provide an easy-to-use python interface 
+- to train an emulator for satellite-based cloud classifications
+- to apply machine learning frameworks for the emulation of a cloud classifcation result 
+
+The *CTyPyTool* facilitates  
+- the extraction and preparation of data from netCDF files containing input satellite data and cloud classification labels for training
+- the training or retraining of differently confgured classifiers on that data
+- the application of a pre-trained classifier to observed or synthetic satellite data.
+
+Our niche:
+- The *CTyPyTool* is mainly meant for research purposes in the field of atmospheric research. 
+- The *CTyPyTool* is NOT meant to replace existing and much more sophistcated cloud typing algorithms.
+- The *CTyPyTool* works by purpose with a reduced information content and thus allows to easily investigate how information is utilized in deriving a cloud typing product.
+- The *CTyPyTool* is especially developed for the application of a consistent cloud classification method to observed and simulated satellite data where a satellite simulator / forward operator needs to be applied in advance to allow a one-to-one comparison.  
 
 
 
@@ -9,12 +23,19 @@ This Project aims to provide a number of tools that allow the application of mac
 
 
 
-![](final_hd.png)
+![](images/final_hd.png)
 
 
 ## Project Parameters
 
-A number of project parameters determine the way data is extracted from NETCDF files as well as how a classifier is trained. When a new cloud classifier project is created, setting files are created in the project folder and initialized with default values. 
+A number of project parameters determine 
+- the way data is extracted from netCDF files as well as
+- how a classifier is trained. 
+
+When a new cloud classifier project is created, setting files are created in the project folder and initialized with default values. For further details see:
+- [What happens during Setup?](devdocs-setup.md)
+- [What happens if you create a new project?](devdocs-overview.md)
+
 Listed below are all project settings currently used by the tool, their default values, and a short explanation about their usage.
 
 ### From 'config.json'

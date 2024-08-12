@@ -1,7 +1,3 @@
-.. CTyPyTool documentation master file, created by
-   sphinx-quickstart on Wed Dec 22 10:52:50 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
 CTyPyTool: A Cloud Typing Python Tool for Verification of Weather Forecasts
 =============================================================================
@@ -36,6 +32,7 @@ CTyPyTool: A Cloud Typing Python Tool for Verification of Weather Forecasts
    :maxdepth: 1
    :caption: Details
 
+   devdocs-overview.md
    devdocs-setup.md
    devdocs-new-project.md
 
