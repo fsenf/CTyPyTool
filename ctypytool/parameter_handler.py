@@ -93,6 +93,17 @@ class parameter_handler:
         self.load_parameters(path=path)
         self.load_filelists(path=path)
 
+    def __repr__( self ):
+
+        string_representation = 'CTYPYTOOL PARAMETER HANDLER class\n\n'
+
+        string_representation += self._parameters2string()
+        string_representation +='\n'
+        
+        string_representation += self._filelists2string()
+
+        return string_representation
+
     def set_parameters(self, **kwargs):
         """
         Sets values of the parameters dictionary.
@@ -106,6 +117,25 @@ class parameter_handler:
             (k, v) for k, v in kwargs.items() if k in self.parameters
         )
 
+    def _parameters2string(self, **kwargs):
+        """
+        Shows values of the parameters dictionary.
+
+        Parameters
+        ----------
+        **kwargs : dictionary
+            Dictionary of named parameters.
+        """
+
+        para_string = "=== Parameters ===\n\n"
+
+        for para_name in sorted( self.parameters ):
+            para = self.parameters[para_name]
+            para_string +='... %-25s : %s\n' % (para_name, para)
+        
+        return para_string
+
+
     def set_filelists(self, **kwargs):
         """
         Sets values of the filelists dictionary.
@@ -116,6 +146,25 @@ class parameter_handler:
             Dictionary of named filelists.
         """
         self.filelists.update((k, v) for k, v in kwargs.items() if k in self.filelists)
+
+
+    def _filelists2string(self, **kwargs):
+        """
+        Shows values of the parameters dictionary.
+
+        Parameters
+        ----------
+        **kwargs : dictionary
+            Dictionary of named parameters.
+        """
+        flist_string = "=== Filelists ===\n\n"
+
+        for flist_name in sorted( self.filelists ):
+            flist = self.filelists[flist_name]
+            flist_string += '... %-25s : %s\n' % (flist_name, flist)
+        
+        return flist_string
+
 
     def extend_filelists(self, **kwargs):
         """

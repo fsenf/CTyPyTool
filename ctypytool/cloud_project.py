@@ -31,6 +31,15 @@ class cloud_project:
         self.filelists = self.param_handler.filelists
         self.masked_indices = None
 
+    def __repr__(self):
+        representation = 'CTYPYTOOL CLOUD PROJECT class\n\n'
+        representation += '... %-25s : %s\n' % ('project_path', self.project_path)
+        representation += '\n'
+        
+        representation += self.param_handler.__repr__()
+
+        return representation
+
     def load_project(self, path):
         """
         Loads a persistant classifier project.
