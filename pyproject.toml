@@ -16,6 +16,8 @@ dependencies = [
     "xarray",
     "matplotlib",
     "pandas",
+    "cartopy",
+    "cftime",
 ]
 
 requires-python = ">=3.8"
