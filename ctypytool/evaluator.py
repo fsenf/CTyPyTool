@@ -27,7 +27,7 @@ class evaluator(cloud_project.cloud_project):
     def __init__(self, project_path=None):
 
         super().__init__(project_path)
-        self.cloud_class = cloud_classifier.cloud_classifier(project_path=project_path)
+        self.cloud_class = cloud_classifier(project_path=project_path)
         self.plotter = cloud_plotter.cloud_plotter()
 
     def create_split_trainingset(self, eval_size=24, timesensitive=True):
