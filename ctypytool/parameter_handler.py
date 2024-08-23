@@ -42,11 +42,11 @@ class parameter_handler:
         ]
 
         self.parameters = {
-            "classifier_type": "Forest",
-            "max_depth": 35,
-            "ccp_alpha": 0,
+            "classifier_type": "Forest",       # classifier type
+            "max_depth": 35,                   # depth of decision tree
+            "ccp_alpha": 0,                    # for pruning of decision tree
             "n_estimators": 100,
-            "feature_preselection": False,
+            "feature_preselection": False,     # currently not used
             "max_features": None,
             "min_samples_split": 2,
             "merge_list": [],
