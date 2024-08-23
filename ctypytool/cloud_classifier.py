@@ -23,7 +23,7 @@ class cloud_classifier(cloud_project.cloud_project):
     def __init__(self, project_path=None):
 
         super().__init__(project_path)
-        self.__trainer = cloud_trainer.cloud_trainer()
+        self.cloud_trainer = cloud_trainer.cloud_trainer()
 
     ######################    PIPELINE  ######################################
     ##########################################################################
@@ -66,8 +66,8 @@ class cloud_classifier(cloud_project.cloud_project):
         else:
             vectors, labels = self.__load_training_set()
 
-        self.__trainer.train_classifier(vectors, labels, self.params, verbose)
-        self.__trainer.save_classifier(self.project_path, verbose)
+        self.cloud_trainer.train_classifier(vectors, labels, self.params, verbose)
+        self.cloud_trainer.save_classifier(self.project_path, verbose)
 
     def run_prediction_pipeline(self, verbose=True, create_filelist=True):
         """
@@ -86,7 +86,7 @@ class cloud_classifier(cloud_project.cloud_project):
         if create_filelist:
             self.__extract_input_filelist(verbose=verbose)
 
-        self.__trainer.load_classifier(self.project_path, verbose=verbose)
+        self.cloud_trainer.load_classifier(self.project_path, verbose=verbose)
         self.__apply_mask(verbose=verbose)
 
         ncdf.create_reference_file(
@@ -106,12 +106,12 @@ class cloud_classifier(cloud_project.cloud_project):
             probas = None
             # when classifier is Forest, get vote share for each type
             if self.params["classifier_type"] == "Forest":
-                li = self.__trainer.classifier.classes_
-                probas = self.__trainer.get_forest_proabilties(vectors)
+                li = self.cloud_trainer.classifier.classes_
+                probas = self.cloud_trainer.get_forest_proabilties(vectors)
                 labels = [li[i] for i in np.argmax(probas, axis=1)]
             # else get only labels
             else:
-                labels = self.__trainer.predict_labels(vectors)
+                labels = self.cloud_trainer.predict_labels(vectors)
 
             filename = self.__write_labels(
                 labels, indices, file, probas, verbose=verbose
