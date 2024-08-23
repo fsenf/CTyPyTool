@@ -16,6 +16,7 @@ def plot_coocurrence_matrix(
     label_data,
     truth_data,
     normalize=True,
+    normalize_type="row",
     title=None,
     cmap=LinearSegmentedColormap.from_list("", ["white", "darkgreen"]),
     missing_indices=None,
@@ -38,7 +39,17 @@ def plot_coocurrence_matrix(
     if normalize:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
+            if normalize_type == "total":
+                cm_sum = cm.sum()
+            elif normalize_type == "row":
+                cm_sum = cm.sum(axis=1)[:, np.newaxis]
+            elif normalize_type == "column":
+                cm_sum = cm.sum(axis=0)[np.newaxis, :]
+            else:
+                cm_sum = 1.
+                
+            cm = cm.astype("float") / cm_sum
+
         gen_titel = "Normalized Correlation Matrix"
         for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
             if np.isnan(cm[i, j]):
